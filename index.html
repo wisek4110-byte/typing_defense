@@ -89,15 +89,23 @@ button{font:inherit;color:inherit}
 .frostzone.on{display:block}
 .field.frozen{box-shadow:inset 0 0 0 3px var(--frost)}
 .gate{position:absolute;left:0;top:0;bottom:0;width:4px;background:repeating-linear-gradient(0deg,var(--muted) 0 6px,transparent 6px 10px)}
-.enemy{position:absolute;top:0;left:0;white-space:nowrap;font-size:19px;font-weight:700;padding:2px 8px;border:1px solid var(--line);background:var(--bg);border-radius:2px;will-change:transform;transition:border-color .1s}
+.enemy{position:absolute;top:0;left:0;white-space:nowrap;padding:3px 9px 4px;border:1px solid var(--line);
+  background:var(--bg);border-radius:3px;will-change:transform;transition:border-color .1s;
+  display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--ink)}
+.enemy .ec{margin:0;font-family:var(--mono);font-size:12px;line-height:1.1;white-space:pre;opacity:.75;letter-spacing:-.3px}
+.enemy .ew{font-size:19px;font-weight:700;line-height:1.2}
 .enemy .chip{opacity:.28;text-decoration:line-through}
 .enemy .hit{color:var(--torch)}
 .enemy .pips{font-size:11px;margin-left:5px;color:var(--ember);letter-spacing:-1px;vertical-align:2px}
 .enemy.lock{border-color:var(--torch);box-shadow:0 0 0 1px var(--torch)}
-.enemy.fast::before{content:"≫ ";color:var(--muted);font-weight:400}
+.enemy.lock .ec{opacity:1}
 .enemy.armor{border-width:2px;border-style:double;border-color:var(--muted)}
-.enemy.boss{font-size:24px;border:2px solid var(--ember);padding:4px 12px}
-.enemy.boss::before{content:"☠ ";color:var(--ember)}
+.enemy.boss{border:2px solid var(--ember);padding:4px 13px 6px}
+.enemy.boss .ec{font-size:14px;opacity:.9}
+.enemy.boss .ew{font-size:23px}
+@media (prefers-reduced-motion:no-preference){.enemy .ec{animation:bob .62s steps(2,end) infinite}}
+@keyframes bob{50%{transform:translateY(-1.5px)}}
+.enemy.frz .ec{animation-play-state:paused}
 .enemy.sp-red{color:var(--ember);border-color:var(--ember)}
 .enemy.sp-gold{color:var(--gold);border-color:var(--gold)}
 .enemy.sp-blue{color:var(--frost);border-color:var(--frost)}
@@ -247,9 +255,17 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
 .result b{display:block;font-size:26px;color:var(--ink)}
 
 /* crumble at the gate */
-.ghost{position:absolute;top:0;left:0;white-space:nowrap;font-size:19px;font-weight:700;padding:2px 8px;pointer-events:none;z-index:4;border:1px solid transparent;background:transparent!important;animation:ghostframe .35s forwards}
-.ghost.boss{font-size:24px;padding:4px 12px}
-.ghost span{display:inline-block;animation:crumble .55s ease-in forwards}
+.ghost{position:absolute;top:0;left:0;white-space:nowrap;padding:3px 9px 4px;pointer-events:none;z-index:4;
+  border:1px solid transparent;background:transparent!important;animation:ghostframe .35s forwards;
+  display:flex;flex-direction:column;align-items:center;gap:1px}
+.ghost .ec{margin:0;font-family:var(--mono);font-size:12px;line-height:1.1;white-space:pre;opacity:.75;
+  letter-spacing:-.3px;animation:puff .5s ease-in forwards}
+.ghost .ew{font-size:19px;font-weight:700;line-height:1.2}
+.ghost.boss{padding:4px 13px 6px}
+.ghost.boss .ec{font-size:14px}
+.ghost.boss .ew{font-size:23px}
+.ghost .ew span{display:inline-block;animation:crumble .55s ease-in forwards}
+@keyframes puff{to{opacity:0;transform:translateY(-7px) scale(.82);filter:blur(2px)}}
 @keyframes ghostframe{from{border-color:var(--ember)}to{border-color:transparent}}
 @keyframes crumble{0%{opacity:1;transform:none}25%{opacity:1;transform:translateX(-3px)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--r)) scale(.3);filter:blur(1.5px)}}
 .dust{position:absolute;pointer-events:none;font-size:12px;font-weight:700;color:var(--muted);z-index:4;animation:dust .7s ease-out forwards}
@@ -272,7 +288,9 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
   .keep{grid-template-rows:auto 130px auto}
   .slots{grid-template-columns:repeat(6,1fr);gap:4px;padding:6px}
   .slot pre{font-size:8px}.slot .sn{font-size:9px}
-  .enemy{font-size:16px}
+  .enemy .ew{font-size:15px}
+  .enemy .ec{font-size:9px}
+  .enemy.boss .ew{font-size:19px}
   .actions .act span{display:none}
   .stats{gap:10px}.stat b{font-size:17px}
   #typer{font-size:18px}
@@ -342,9 +360,9 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
 |_____|_|_|_|_|_||___________|_|_|_|_|_||_____|</pre>
       <p class="eyebrow">한글 타자 · 타워 디펜스</p>
       <h1 class="title" id="gameTitle">타자 공성전</h1>
-      <p class="lead">글자로 된 적이 성문으로 걸어옵니다. 단어를 치면 쓰러지고, 놓치면 성벽이 한 글자씩 부서집니다.</p>
+      <p class="lead">무기를 든 고양이들이 글자를 달고 성문으로 몰려옵니다. 글자를 치면 쓰러지고, 놓치면 성벽이 한 글자씩 부서집니다.</p>
       <ul class="facts">
-        <li><b>Lv 1 → 100</b>10타에서 700타까지</li>
+        <li><b>Lv 1 → 120</b>60타에서 700타까지</li>
         <li><b>성 5단계</b>오두막에서 왕성까지</li>
         <li><b>타워 4종</b>골드로 짓고 강화</li>
       </ul>
@@ -373,7 +391,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
     <section class="guide" aria-label="게임 방법">
       <p class="gh">게임 방법</p>
       <ol class="steps">
-        <li><b>1</b><span><em>단어가 오른쪽에서 성문으로 걸어옵니다.</em> 가까울수록 급한 적입니다.</span></li>
+        <li><b>1</b><span><em>무기를 든 고양이들이 글자를 달고 걸어옵니다.</em> 성문에 가까울수록 급한 적입니다.</span></li>
         <li><b>2</b><span><em>단어를 치고 Enter를 누르면 쓰러집니다.</em> 빠를수록 콤보와 골드가 붙습니다.</span></li>
         <li><b>3</b><span><em>모은 골드로 성 아래에 타워를 세웁니다.</em> 레벨이 오르면 자리가 늘어납니다.</span></li>
       </ol>
@@ -383,7 +401,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
         <li><b style="color:var(--frost)">파란 단어</b>모든 적 3초 빙결</li>
         <li><b style="color:var(--moss)">초록 단어</b>성 체력 회복</li>
         <li><b style="color:var(--violet)">보라 단어</b>앞 글자 2개 깎기</li>
-        <li><b>이중 테두리</b>여러 번 쳐야 하는 적</li>
+        <li><b>갑옷 고양이</b>여러 번 쳐야 하는 적</li>
       </ul>
       <p class="keys"><kbd>Enter</kbd> 또는 <kbd>Space</kbd> 공격 · <kbd>Tab</kbd> 적을 미리 불러 골드 보너스 · <kbd>Esc</kbd> 멈춤, 한 번 더 누르면 처음 화면으로 · 레벨마다 능력 카드를 하나 고릅니다.</p>
     </section>
@@ -563,19 +581,27 @@ const keysOf = w => jamo(w).length;
 
 // ---------- balance ----------
 // 필요 타수(타/분): 10 → 20 → ... → 100 (Lv10) → 200 (Lv20) → 이후 완만하게
-const MAX_LEVEL=100;
-function targetKPM(L){ if(L<=10) return 10*L; if(L<=20) return 100+10*(L-10); return Math.round(200+(Math.min(L,MAX_LEVEL)-20)*6.25); } // Lv100 = 700타
+const MAX_LEVEL=120;
+// Lv1 60타 → Lv10 150타 → Lv20 300타 → Lv120 700타
+function targetKPM(L){ L=Math.min(L,MAX_LEVEL); if(L<=10) return 50+10*L; if(L<=20) return 150+15*(L-10); return 300+(L-20)*4; }
 // 적이 전장을 가로지르는 시간(초). 천천히 줄어듦
-function crossTime(L){ if(L<=21) return Math.max(11, 26-(L-1)*0.75); return Math.max(8, 11-(L-21)*0.038); } // Lv100 = 8초
+function crossTime(L){ if(L<=21) return Math.max(11, 22-(L-1)*0.55); return Math.max(8, 11-(L-21)*0.0303); } // Lv120 = 8초
 function xpNeed(L){ return 30+15*L; }
 function stageFor(L){ let s=0; STAGES.forEach((st,i)=>{ if(L>=st.from) s=i; }); return s; }
 function tierWeights(L){
-  if(L<=2) return {2:1};
-  if(L<=4) return {2:.7,3:.3};
-  if(L<=7) return {2:.4,3:.45,4:.15};
-  if(L<=11) return {2:.2,3:.45,4:.3,5:.05};
+  if(L<=2) return {2:.55,3:.45};
+  if(L<=4) return {2:.4,3:.45,4:.15};
+  if(L<=7) return {2:.3,3:.45,4:.2,5:.05};
+  if(L<=11) return {2:.2,3:.4,4:.3,5:.1};
   return {2:.1,3:.35,4:.35,5:.2};
 }
+// 적 고양이 — 머리 위 모양으로 종류를 알아본다
+const CATS={
+  normal:[' /\\_/\\  ^','( o.o ) |',' > ^ <  |'],
+  fast:  [' /\\_/\\ /','( >.< )',' > v <'],
+  armor: [' [\\_/]','(=o.o=)',' >[#]<'],
+  boss:  ['  \\|/','  /\\_/\\  ^',' (= o =) |','  >[#]<  |'],
+};
 const SPECIALS = ['red','gold','blue','green','violet'];
 const SP_NAME = {red:'격노',gold:'황금',blue:'빙결',green:'치유',violet:'번개'};
 
@@ -602,7 +628,7 @@ function newState(){
 // ---------- layout ----------
 function measure(){
   fieldW=field.clientWidth; fieldH=field.clientHeight;
-  LANES = fieldH<260?4:5;
+  LANES = Math.max(2, Math.min(5, Math.floor(fieldH/82)));
   field.querySelectorAll('.lane').forEach(n=>n.remove());
   for(let i=1;i<LANES;i++){ const d=document.createElement('div'); d.className='lane'; d.style.top=(fieldH/LANES*i)+'px'; field.appendChild(d); }
   fitArt();
@@ -663,7 +689,10 @@ function spawn(kind){
   }
   const el=document.createElement('div');
   el.className='enemy '+kind+(e.special?' sp-'+e.special:'');
-  e.el=el; field.appendChild(el);
+  el.innerHTML='<pre class="ec" aria-hidden="true"></pre><span class="ew"></span>';
+  e.el=el; e.ec=el.firstChild; e.ew=el.lastChild;
+  e.ec.textContent=(CATS[kind]||CATS.normal).join('\n');
+  field.appendChild(el);
   renderEnemy(e,true);
   S.enemies.push(e);
   place(e);
@@ -681,7 +710,7 @@ function renderEnemy(e,force){
   if(!force && k===e.k) return;
   e.k=k;
   const pips = e.maxHp>1 ? `<span class="pips">${'■'.repeat(e.hp)}${'□'.repeat(Math.max(0,e.maxHp-e.hp))}</span>`:'';
-  e.el.innerHTML=`${e.chipped?`<span class="chip">${e.chipped}</span>`:''}<span class="hit">${e.rest.slice(0,k)}</span>${e.rest.slice(k)}${pips}`;
+  e.ew.innerHTML=`${e.chipped?`<span class="chip">${e.chipped}</span>`:''}<span class="hit">${e.rest.slice(0,k)}</span>${e.rest.slice(k)}${pips}`;
   e.w=e.el.offsetWidth;
 }
 function place(e){
@@ -798,7 +827,8 @@ function crumble(e){
   g.className='ghost '+e.el.className.replace(/\b(enemy|lock|die|frz)\b/g,'');
   g.style.transform=e.el.style.transform;
   const chars=[...e.rest];
-  g.innerHTML=chars.map((c,i)=>`<span style="--dx:${-(10+Math.random()*26).toFixed(0)}px;--dy:${(Math.random()*34-8).toFixed(0)}px;--r:${(Math.random()*120-60).toFixed(0)}deg;animation-delay:${i*95}ms">${c}</span>`).join('');
+  const cat=(CATS[e.kind]||CATS.normal).join('\n').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  g.innerHTML=`<pre class="ec">${cat}</pre><span class="ew">`+chars.map((c,i)=>`<span style="--dx:${-(10+Math.random()*26).toFixed(0)}px;--dy:${(Math.random()*34-8).toFixed(0)}px;--r:${(Math.random()*120-60).toFixed(0)}deg;animation-delay:${i*95}ms">${c}</span>`).join('')+'</span>';
   field.appendChild(g);
   setTimeout(()=>g.remove(), chars.length*95+650);
   const bits=['.',',',"'",'*',':'];
@@ -825,7 +855,7 @@ function levelUp(){
   S.hp=Math.min(S.maxHp,S.hp+Math.round(S.maxHp*.2));
   S.shield=S.maxShield;
   if(S.level%5===0) S.bossQueued=true;
-  if(S.level===MAX_LEVEL) setTimeout(()=>banner('최고 레벨 100','이제 버티는 만큼이 기록입니다'),300);
+  if(S.level===MAX_LEVEL) setTimeout(()=>banner(`최고 레벨 ${MAX_LEVEL}`,'이제 버티는 만큼이 기록입니다'),300);
   showPerks();
 }
 // 성이 맞을수록 벽돌이 한 글자씩 떨어져 나간다
