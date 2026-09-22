@@ -58,13 +58,15 @@ button{font:inherit;color:inherit}
 .iconbtn:hover{color:var(--ink);border-color:var(--muted)}
 
 /* Stage */
-.stage{display:grid;grid-template-columns:minmax(260px,34%) 1fr;gap:10px;min-height:0;position:relative}
-.keep{background:var(--panel);border:1px solid var(--line);display:grid;grid-template-rows:auto 1fr auto;min-height:0;position:relative}
-.keep-head{display:flex;justify-content:space-between;align-items:baseline;padding:8px 12px 0}
-.keep-name{font-family:var(--display);font-size:20px}
+.stage{min-height:0;position:relative;display:block}
+.castle{position:absolute;left:0;top:0;bottom:0;z-index:2;width:min(34%,430px);
+  display:grid;grid-template-rows:auto 1fr;pointer-events:none;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--panel) 85%,transparent) 52%,transparent)}
+.keep-head{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:5px 10px 0;max-width:var(--cw,100%)}
+.keep-name{font-family:var(--display);font-size:19px;line-height:1.15}
 .keep-sub{font-size:12px;color:var(--muted)}
-.artbox{position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;min-height:120px}
-#art{margin:0;font-family:var(--mono);font-size:14px;line-height:1.12;white-space:pre;transform-origin:bottom center;color:var(--ink);transition:color .3s}
+.artbox{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:90px;padding:2px 0 6px}
+#art{margin:0;font-family:var(--mono);font-size:14px;line-height:1.12;white-space:pre;transform-origin:center;color:var(--ink);transition:color .3s}
 #art.hit{animation:shake .25s}
 #art.low{color:var(--ember)}
 #art.grow{animation:grow .8s ease-out}
@@ -73,8 +75,11 @@ button{font:inherit;color:inherit}
 @media (prefers-reduced-motion:no-preference){#art.low{animation:flick 1.2s infinite}}
 @keyframes flick{50%{opacity:.78}}
 
-.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 10px 10px;border-top:1px dashed var(--line)}
-.slot{background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:4px 2px 3px;cursor:pointer;text-align:center;min-height:64px;position:relative}
+.slots{position:absolute;left:var(--cw,0px);right:0;z-index:3;display:grid;grid-auto-flow:column;
+  grid-auto-columns:minmax(0,1fr);gap:6px;padding:5px 8px;max-width:640px}
+.slots-top{top:0;border-bottom:1px dashed var(--line)}
+.slots-bot{bottom:0;border-top:1px dashed var(--line)}
+.slot{background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:3px 2px 2px;cursor:pointer;text-align:center;min-height:58px;position:relative}
 .slot:hover{border-color:var(--muted)}
 .slot pre{margin:0;font-size:11px;line-height:1.05;font-family:var(--mono)}
 .slot .sn{font-size:11px;color:var(--muted);display:block;margin-top:2px}
@@ -83,12 +88,11 @@ button{font:inherit;color:inherit}
 .slot .cdbar{position:absolute;left:3px;right:3px;bottom:2px;height:2px;background:var(--line)}
 .slot .cdbar i{display:block;height:100%;background:currentColor;width:0}
 
-.field{position:relative;overflow:hidden;background:var(--field);border:1px solid var(--line);min-height:240px}
-.lane{position:absolute;left:0;right:0;border-bottom:1px dashed var(--line);opacity:.7}
-.frostzone{position:absolute;top:0;bottom:0;left:0;width:48%;background:linear-gradient(90deg,color-mix(in srgb,var(--frost) 16%,transparent),transparent);border-right:1px dotted var(--frost);display:none;pointer-events:none}
+.field{position:relative;overflow:hidden;background:var(--field);border:1px solid var(--line);min-height:240px;height:100%}
+.lane{position:absolute;left:var(--cw,0px);right:0;border-bottom:1px dashed var(--line);opacity:.7}
+.frostzone{position:absolute;top:0;bottom:0;left:var(--cw,0px);width:36%;background:linear-gradient(90deg,color-mix(in srgb,var(--frost) 16%,transparent),transparent);border-right:1px dotted var(--frost);display:none;pointer-events:none}
 .frostzone.on{display:block}
 .field.frozen{box-shadow:inset 0 0 0 3px var(--frost)}
-.gate{position:absolute;left:0;top:0;bottom:0;width:4px;background:repeating-linear-gradient(0deg,var(--muted) 0 6px,transparent 6px 10px)}
 .enemy{position:absolute;top:0;left:0;z-index:1;white-space:nowrap;padding:0;border:0;background:none;
   will-change:transform;display:flex;flex-direction:column;align-items:center;color:var(--ink);text-align:center}
 .enemy .ec{margin:0;font-family:var(--mono);font-size:12.5px;line-height:1.05;white-space:pre;opacity:.82;letter-spacing:-.3px}
@@ -123,6 +127,14 @@ button{font:inherit;color:inherit}
 @keyframes up{from{opacity:1;translate:0 0}to{opacity:0;translate:0 -34px}}
 .shot{position:absolute;z-index:6;pointer-events:none;font-weight:700;color:var(--torch);transition:left .18s linear,top .18s linear;font-size:13px}
 .shot.arrow{color:var(--ember);font-size:16px;z-index:7}
+.ally{position:absolute;z-index:5;pointer-events:none;margin:0;white-space:pre;
+  font-family:var(--mono);font-size:12.5px;line-height:1.05;letter-spacing:-.3px;font-weight:700;
+  color:var(--moss);transition:left .17s cubic-bezier(.2,.75,.3,1),opacity .24s}
+.ally.back{opacity:0}
+.burst{position:absolute;z-index:6;pointer-events:none;margin:0;white-space:pre;
+  font-family:var(--mono);font-size:13px;line-height:1;font-weight:700;color:var(--torch);
+  transform-origin:center;animation:bang .42s ease-out forwards}
+@keyframes bang{0%{opacity:0;transform:scale(.4)}28%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1.55)}}
 .banner{position:absolute;left:50%;top:38%;translate:-50% -50%;font-family:var(--display);font-size:clamp(26px,4vw,46px);white-space:nowrap;pointer-events:none;z-index:8;text-align:center;animation:ban 1.8s ease-out forwards}
 .banner small{display:block;font-family:var(--mono);font-size:15px;color:var(--muted)}
 @keyframes ban{0%{opacity:0;scale:.9}15%{opacity:1;scale:1}80%{opacity:1}100%{opacity:0}}
@@ -274,16 +286,20 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
 }
 @media (max-width:760px){
   .game{padding:8px;gap:8px}
-  .stage{grid-template-columns:1fr;grid-template-rows:auto 1fr}
-  .keep{grid-template-rows:auto 130px auto}
-  .slots{grid-template-columns:repeat(6,1fr);gap:4px;padding:6px}
-  .slot pre{font-size:8px}.slot .sn{font-size:9px}
+  .castle{width:42%}
+  .keep-head{padding:4px 7px 0}
+  .keep-name{font-size:15px}.keep-sub{font-size:10px}
+  .slots{gap:4px;padding:4px 6px;max-width:none}
+  .slot{min-height:46px;padding:2px 1px 1px}
+  .slot pre{font-size:7px}.slot .sn{font-size:8px}
   .enemy .ew,.ghost .ew{font-size:15px}
   .enemy .ec,.ghost .ec{font-size:8.5px}
   .enemy.boss .ew{font-size:19px}
   .enemy.boss .ec{font-size:10px}
   .enemy .ep{font-size:9px;height:10px}
   .enemy .ea{width:34px}
+  .ally{font-size:9px}
+  .burst{font-size:10px}
   .actions .act span{display:none}
   .stats{gap:10px}.stat b{font-size:17px}
   #typer{font-size:18px}
@@ -312,14 +328,14 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
   </header>
 
   <main class="stage" id="stage">
-    <section class="keep" aria-label="내 성">
-      <div class="keep-head"><span class="keep-name" id="keepName">오두막</span><span class="keep-sub" id="keepSub">다음 성장: Lv 3</span></div>
-      <div class="artbox" id="artbox"><pre id="art"></pre></div>
-      <div class="slots" id="slots"></div>
-    </section>
     <section class="field" id="field" aria-label="전장">
       <div class="frostzone" id="frostzone"></div>
-      <div class="gate"></div>
+      <div class="slots slots-top" id="slotsTop" aria-label="위쪽 타워 자리"></div>
+      <div class="slots slots-bot" id="slotsBot" aria-label="아래쪽 타워 자리"></div>
+      <div class="castle" id="castle" aria-label="내 성">
+        <div class="keep-head"><span class="keep-name" id="keepName">오두막</span><span class="keep-sub" id="keepSub">다음 성장: Lv 3</span></div>
+        <div class="artbox" id="artbox"><pre id="art"></pre></div>
+      </div>
     </section>
   </main>
 
@@ -643,15 +659,36 @@ function pickUnit(L){
 }
 function unitTier(u){ const U=UNITS[u]||UNITS.cat; return Math.max(U.tmin,Math.min(U.tmax,pickTier(S.level))); }
 
+// 아군 — 성에서 달려 나와 적을 무찌르는 강아지 부대
+const ALLIES=[
+String.raw`   ,__,
+  ( o.o )
+ ~(  v  )=>
+   /|  |\
+    ^^ ^^`,
+String.raw`   ,__,
+  ( ^.^ )
+ ~(  v  )=>
+   /|  |\
+    ^^ ^^`,
+String.raw`   ,__,
+  ( >.< )
+ ~(  v  )=>
+   /|  |\
+    ^^ ^^`,
+];
+const BURST=' \\|/\n-- --\n /|\\';
 const SPECIALS = ['red','gold','blue','green','violet'];
 const SP_NAME = {red:'격노',gold:'황금',blue:'빙결',green:'치유',violet:'번개'};
 
 // ---------- dom ----------
 const $=id=>document.getElementById(id);
-const field=$('field'), art=$('art'), typer=$('typer'), slotsEl=$('slots'), menu=$('menu');
+const field=$('field'), art=$('art'), typer=$('typer'), menu=$('menu');
+const slotsTop=$('slotsTop'), slotsBot=$('slotsBot'), castle=$('castle');
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
 let S, topic='daily', DICT=null, LANES=5, fieldW=600, fieldH=300;
+let castleW=200, laneTop=0, laneBoxH=300;   // 적이 걸어 들어오는 구역
 function newState(){
   return {
     running:false, paused:false, over:false, time:0,
@@ -669,16 +706,25 @@ function newState(){
 // ---------- layout ----------
 function measure(){
   fieldW=field.clientWidth; fieldH=field.clientHeight;
-  LANES = Math.max(2, Math.min(5, Math.floor(fieldH/(fieldW<760?92:124))));
-  field.querySelectorAll('.lane').forEach(n=>n.remove());
-  for(let i=1;i<LANES;i++){ const d=document.createElement('div'); d.className='lane'; d.style.top=(fieldH/LANES*i)+'px'; field.appendChild(d); }
+  const topH=slotsTop.offsetHeight, botH=slotsBot.offsetHeight;
+  laneTop=topH; laneBoxH=Math.max(80, fieldH-topH-botH);
   fitArt();
+  // 적이 멈추는 곳 = 성 그림이 실제로 그려진 오른쪽 끝
+  const ar=art.getBoundingClientRect(), fr=field.getBoundingClientRect();
+  castleW=Math.max(70, Math.min(Math.round(fieldW*.46), Math.round(ar.right-fr.left)+6));
+  field.style.setProperty('--cw', castleW+'px');
+  LANES = Math.max(2, Math.min(5, Math.floor(laneBoxH/(fieldW<760?92:124))));
+  field.querySelectorAll('.lane').forEach(n=>n.remove());
+  for(let i=1;i<LANES;i++){
+    const d=document.createElement('div'); d.className='lane';
+    d.style.top=(laneTop+laneBoxH/LANES*i)+'px'; field.appendChild(d);
+  }
   if(S) S.enemies.forEach(e=>{ if(e.lane>=LANES) e.lane=LANES-1; e.w=e.el.offsetWidth; });
 }
 function fitArt(){
   const box=$('artbox'); art.style.transform='none';
   const w=art.scrollWidth, h=art.scrollHeight, bw=box.clientWidth-12, bh=box.clientHeight-6;
-  const s=Math.max(.35, Math.min(bw/w, bh/h, 1.7));
+  const s=Math.max(.35, Math.min(bw/w, bh/h, 2.2));
   art.style.transform=`scale(${s})`;
 }
 window.addEventListener('resize',measure);
@@ -749,17 +795,36 @@ function renderEnemy(e,force){
   e.w=e.el.offsetWidth;
 }
 function place(e){
-  const laneH=fieldH/LANES;
+  const laneH=laneBoxH/LANES;
   const eh=e.el.offsetHeight||30;
-  const y=Math.max(2,laneH*e.lane+(laneH-eh)/2);
-  const x=8+e.x*Math.max(0,fieldW-e.w-14);
+  const y=laneTop+Math.max(1,laneH*e.lane+(laneH-eh)/2);
+  const travel=Math.max(40, fieldW-castleW-e.w-10);
+  const x=castleW+2+e.x*travel;          // x=0 → 건물 바로 앞
   e.px=x; e.py=y;
   e.el.style.transform=`translate(${x}px,${y}px)`;
 }
-function removeEnemy(e){
+function removeEnemy(e,delay){
   S.enemies=S.enemies.filter(o=>o!==e);
-  e.el.classList.add('die');
-  setTimeout(()=>e.el.remove(),260);
+  const go=()=>{ e.el.classList.add('die'); setTimeout(()=>e.el.remove(),260); };
+  if(delay) setTimeout(go,delay); else go();
+}
+// 단어를 맞히면 강아지 한 마리가 성에서 달려 나와 적을 친다
+function allyStrike(e){
+  const y=e.py+Math.max(0,((e.el.offsetHeight||64)-66)/2);
+  const d=document.createElement('pre');
+  d.className='ally'; d.textContent=ALLIES[Math.floor(Math.random()*ALLIES.length)];
+  d.style.left=Math.max(2,castleW-34)+'px'; d.style.top=y+'px';
+  field.appendChild(d);
+  const dw=d.offsetWidth||84;                       // 적 바로 왼쪽에 멈춰 서도록
+  requestAnimationFrame(()=>{ d.style.left=Math.max(0,e.px-dw+12)+'px'; });
+  setTimeout(()=>{
+    const bs=document.createElement('pre');
+    bs.className='burst'; bs.textContent=BURST;
+    bs.style.left=Math.round(e.px-18)+'px'; bs.style.top=Math.round(y+20)+'px';
+    field.appendChild(bs); setTimeout(()=>bs.remove(),430);
+  },170);
+  setTimeout(()=>d.classList.add('back'),380);
+  setTimeout(()=>d.remove(),660);
 }
 function floatText(x,y,txt,color){
   const d=document.createElement('div'); d.className='float'; d.textContent=txt;
@@ -818,7 +883,7 @@ function kill(e,{typed=false,crit=false,tower=false}={}){
   if(S.leech) S.hp=Math.min(S.maxHp,S.hp+S.leech);
   if(e.special) triggerSpecial(e);
   if(e.kind==='boss') banner('보스 격파', `+${g} 골드`);
-  removeEnemy(e);
+  if(typed){ allyStrike(e); removeEnemy(e,165); } else removeEnemy(e);
 }
 function triggerSpecial(e){
   const d=S.buffDur;
@@ -848,7 +913,7 @@ function chip(e,n,fromTower=true){
 function siegeHit(d,y){
   if(S.shield>0){ const a=Math.min(S.shield,d); S.shield-=a; d-=a; }
   S.hp-=d; S.lastHit=S.time;
-  floatText(14,y,d>0?`-${d}`:'막음!',d>0?'var(--ember)':'var(--shield)');
+  floatText(Math.round(castleW*.5),y,d>0?`-${d}`:'막음!',d>0?'var(--ember)':'var(--shield)');
   art.classList.remove('hit'); void art.offsetWidth; art.classList.add('hit');
   if(S.hp<=0) gameOver();
 }
@@ -869,7 +934,7 @@ function fireAt(e,U){
   const dur=Math.max(.3, e.px/760);
   sh.style.transitionDuration=dur+'s, '+dur+'s';
   field.appendChild(sh);
-  requestAnimationFrame(()=>{ sh.style.left='2px'; });
+  requestAnimationFrame(()=>{ sh.style.left=Math.round(castleW*.55)+'px'; });
   setTimeout(()=>{ sh.remove(); if(S&&S.running&&!S.paused&&!S.over) siegeHit(U.shot,y); }, dur*1000+20);
   e.el.classList.remove('hot');
 }
@@ -943,7 +1008,7 @@ function applyStage(grow){
   const nx=STAGES[S.stage+1];
   $('keepSub').textContent= nx?`다음 성장: Lv ${nx.from}`:'최고 단계';
   if(grow){ art.classList.remove('grow'); void art.offsetWidth; art.classList.add('grow'); banner(`${st.name}(으)로 성장`,`타워 자리 ${st.slots}칸 · 최대 체력 ${S.maxHp}`); }
-  requestAnimationFrame(fitArt);
+  requestAnimationFrame(measure);
   renderSlots();
 }
 
@@ -987,7 +1052,7 @@ $('perks').addEventListener('click',ev=>{ const b=ev.target.closest('.perk'); if
 // ---------- towers ----------
 function renderSlots(){
   const n=STAGES[S.stage].slots;
-  slotsEl.innerHTML='';
+  slotsTop.innerHTML=''; slotsBot.innerHTML='';
   S.towers.forEach((t,i)=>{
     const b=document.createElement('button');
     const locked=i>=n;
@@ -998,7 +1063,7 @@ function renderSlots(){
     b.disabled=false;
     b.addEventListener('click',ev=>{ ev.stopPropagation(); if(!locked) openMenu(i,b); });
     t.el=b;
-    slotsEl.appendChild(b);
+    (i%2===0?slotsTop:slotsBot).appendChild(b);   // 짝수는 위, 홀수는 아래
   });
   updateDerived();
 }
@@ -1174,7 +1239,7 @@ const repairCost=()=>15+S.level*3;
 function callEarly(){
   if(!S.running||S.paused||S.enemies.length>=8) return;
   const e=spawn(); const g=callBonus(); S.gold+=g;
-  floatText(fieldW-70,e.py||20,`+${g}G`,'var(--gold)');
+  floatText(fieldW-90,e.py||20,`+${g}G`,'var(--gold)');
 }
 function repair(){
   const c=repairCost(); if(S.gold<c||S.hp>=S.maxHp) return;
@@ -1207,7 +1272,7 @@ function quitToStart(){
     S.running=false; S.paused=false; S.over=true;
     S.enemies.forEach(e=>e.el.remove()); S.enemies=[];
   }
-  field.querySelectorAll('.float,.banner,.shot,.ghost,.dust').forEach(n=>n.remove());
+  field.querySelectorAll('.float,.banner,.shot,.ghost,.dust,.ally,.burst,.enemy').forEach(n=>n.remove());
   field.classList.remove('frozen');
   closeMenu();
   ['perkOv','pauseOv','overOv','howOv'].forEach(id=>$(id).classList.remove('on'));
@@ -1300,7 +1365,7 @@ function start(){
     DICT=buildDict(w);
   } else DICT=buildDict(TOPICS[topic].list);
   if(S && S.enemies) S.enemies.forEach(e=>e.el.remove());
-  field.querySelectorAll('.float,.banner,.shot').forEach(n=>n.remove());
+  field.querySelectorAll('.float,.banner,.shot,.ghost,.dust,.ally,.burst,.enemy').forEach(n=>n.remove());
   S=newState();
   S.stage=0; S.maxHp=STAGES[0].hp; S.hp=S.maxHp;
   applyStage(false);
