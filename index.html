@@ -76,8 +76,7 @@ button{font:inherit;color:inherit}
 @keyframes flick{50%{opacity:.78}}
 
 .slots{position:absolute;left:var(--cw,0px);right:0;z-index:3;display:grid;grid-auto-flow:column;
-  grid-auto-columns:minmax(0,1fr);gap:6px;padding:5px 8px;max-width:640px}
-.slots-top{top:0;border-bottom:1px dashed var(--line)}
+  grid-auto-columns:minmax(0,1fr);gap:6px;padding:5px 8px;max-width:860px}
 .slots-bot{bottom:0;border-top:1px dashed var(--line)}
 .slot{background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:3px 2px 2px;cursor:pointer;text-align:center;min-height:58px;position:relative}
 .slot:hover{border-color:var(--muted)}
@@ -330,8 +329,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
   <main class="stage" id="stage">
     <section class="field" id="field" aria-label="전장">
       <div class="frostzone" id="frostzone"></div>
-      <div class="slots slots-top" id="slotsTop" aria-label="위쪽 타워 자리"></div>
-      <div class="slots slots-bot" id="slotsBot" aria-label="아래쪽 타워 자리"></div>
+      <div class="slots slots-bot" id="slotsBot" aria-label="타워 자리"></div>
       <div class="castle" id="castle" aria-label="내 성">
         <div class="keep-head"><span class="keep-name" id="keepName">오두막</span><span class="keep-sub" id="keepSub">다음 성장: Lv 3</span></div>
         <div class="artbox" id="artbox"><pre id="art"></pre></div>
@@ -684,7 +682,7 @@ const SP_NAME = {red:'격노',gold:'황금',blue:'빙결',green:'치유',violet:
 // ---------- dom ----------
 const $=id=>document.getElementById(id);
 const field=$('field'), art=$('art'), typer=$('typer'), menu=$('menu');
-const slotsTop=$('slotsTop'), slotsBot=$('slotsBot'), castle=$('castle');
+const slotsBot=$('slotsBot'), castle=$('castle');
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
 let S, topic='daily', DICT=null, LANES=5, fieldW=600, fieldH=300;
@@ -706,8 +704,8 @@ function newState(){
 // ---------- layout ----------
 function measure(){
   fieldW=field.clientWidth; fieldH=field.clientHeight;
-  const topH=slotsTop.offsetHeight, botH=slotsBot.offsetHeight;
-  laneTop=topH; laneBoxH=Math.max(80, fieldH-topH-botH);
+  const botH=slotsBot.offsetHeight;
+  laneTop=0; laneBoxH=Math.max(80, fieldH-botH);
   fitArt();
   // 적이 멈추는 곳 = 성 그림이 실제로 그려진 오른쪽 끝
   const ar=art.getBoundingClientRect(), fr=field.getBoundingClientRect();
@@ -1052,7 +1050,7 @@ $('perks').addEventListener('click',ev=>{ const b=ev.target.closest('.perk'); if
 // ---------- towers ----------
 function renderSlots(){
   const n=STAGES[S.stage].slots;
-  slotsTop.innerHTML=''; slotsBot.innerHTML='';
+  slotsBot.innerHTML='';
   S.towers.forEach((t,i)=>{
     const b=document.createElement('button');
     const locked=i>=n;
@@ -1063,7 +1061,7 @@ function renderSlots(){
     b.disabled=false;
     b.addEventListener('click',ev=>{ ev.stopPropagation(); if(!locked) openMenu(i,b); });
     t.el=b;
-    (i%2===0?slotsTop:slotsBot).appendChild(b);   // 짝수는 위, 홀수는 아래
+    slotsBot.appendChild(b);
   });
   updateDerived();
 }
