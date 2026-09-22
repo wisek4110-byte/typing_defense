@@ -168,7 +168,10 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
   font-size:12px;padding:0 12px;min-height:32px;cursor:pointer}
 .ghostbtn:hover{color:var(--ink);border-color:var(--muted)}
 
-.brand{display:grid;justify-items:center;gap:10px;text-align:center}
+.brand{display:grid;justify-items:center;gap:9px;text-align:center}
+.eyebrow{display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--mono);
+  font-size:12px;letter-spacing:.16em;color:var(--muted);margin:1px 0 -3px}
+.eyebrow::before,.eyebrow::after{content:"";width:20px;height:1px;background:var(--torch);flex:none;opacity:.75}
 .title-art{font-size:clamp(7px,1.45vw,11px);line-height:1.08;color:var(--torch);margin:0;white-space:pre;opacity:.85}
 .title{font-family:var(--display);font-weight:400;font-size:clamp(42px,9vw,70px);line-height:1;margin:0}
 
@@ -264,6 +267,8 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
   #startOv{padding:14px 14px 26px}
   .topics{grid-template-columns:1fr}
   .title-art{font-size:7px;letter-spacing:-.2px}
+  .eyebrow{font-size:11px;letter-spacing:.12em;gap:8px}
+  .eyebrow::before,.eyebrow::after{width:14px}
   .legend{grid-template-columns:1fr}
   .topbar{top:8px;right:10px}
 }
@@ -346,6 +351,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
 [_____]            [_______]            [_____]
 | [+] |            | [+++] |            | [+] |
 |_____|_|_|_|_|_||___________|_|_|_|_|_||_____|</pre>
+      <p class="eyebrow">한글 타자 · 타워 디펜스</p>
       <h1 class="title" id="gameTitle">타자 공성전</h1>
     </div>
 
