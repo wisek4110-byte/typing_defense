@@ -121,6 +121,8 @@ button{font:inherit;color:inherit}
 .enemy.sp-green{color:var(--moss);border-color:var(--moss)}
 .enemy.sp-violet{color:var(--violet);border-color:var(--violet)}
 .enemy.frz{filter:saturate(.3)}
+.enemy.doomed{opacity:.42;filter:grayscale(.6);transition:opacity .2s,filter .2s}
+.enemy.doomed .ew{border-bottom-color:transparent}
 .enemy.die{transition:opacity .3s .15s;opacity:0}
 .enemy.die .ec{opacity:1}
 .float{position:absolute;pointer-events:none;font-weight:700;font-size:14px;white-space:nowrap;animation:up .9s ease-out forwards;z-index:5}
@@ -129,8 +131,8 @@ button{font:inherit;color:inherit}
 .shot.arrow{color:var(--ember);font-size:16px;z-index:7}
 .ally{position:absolute;z-index:5;pointer-events:none;margin:0;white-space:pre;
   font-family:var(--mono);font-size:12.5px;line-height:1.05;letter-spacing:-.3px;font-weight:700;
-  color:var(--moss);transition:left .3s cubic-bezier(.3,.55,.45,1),opacity .26s}
-@media (prefers-reduced-motion:no-preference){.ally.run{animation:trot .21s steps(2,end) infinite}}
+  color:var(--moss);transition:left .3s linear,opacity .26s}
+@media (prefers-reduced-motion:no-preference){.ally.run{animation:trot .31s steps(2,end) infinite}}
 @keyframes trot{50%{transform:translateY(-2px)}}
 .ally.back{opacity:0}
 .burst{position:absolute;z-index:6;pointer-events:none;margin:0;white-space:pre;
@@ -609,7 +611,7 @@ const UNITS = {
   cat:     {name:'고양이 보병', from:1,  w:3.2, spd:1.0,  hp:1, dmg:10, gold:1,   tmin:2, tmax:5,
     art:String.raw`      /\_/\
      ( o.o )
-  ^==(  v  )~
+  <==(  v  )~
      /|   |\
       ^^ ^^`},
   horse:   {name:'기마 고양이', from:4,  w:2.4, spd:1.55, hp:1, dmg:8,  gold:1.3, tmin:2, tmax:3,
@@ -646,7 +648,7 @@ const UNITS = {
     art:String.raw`      \\|//
       /\_/\
      (= o =)
-  ^==(  W  )~
+  <==(  W  )~
      /|   |\
       ^^ ^^`},
 };
@@ -807,6 +809,7 @@ function place(e){
 }
 function removeEnemy(e,delay){
   S.enemies=S.enemies.filter(o=>o!==e);
+  e.el.classList.add('doomed');           // 이미 처치 — 강아지가 도착할 때까지 흐리게
   const go=()=>{
     if(e.ec) e.ec.textContent=faintArt((UNITS[e.kind]||UNITS.cat).art);
     e.el.classList.add('die');
@@ -828,11 +831,11 @@ function allyStrike(e){
   const dw=d.offsetWidth||84;
   const tx=Math.max(x0, e.px-dw+12);
   const dist=tx-x0;
-  const dur=Math.min(950, Math.max(300, Math.round(dist/950*1000)));   // 초속 약 950px
+  const dur=Math.min(1800, Math.max(400, Math.round(dist/360*1000)));  // 초속 약 360px — 고양이 걸음에 가깝게
   d.style.transitionDuration=dur+'ms';
   requestAnimationFrame(()=>{ d.style.left=tx+'px'; });
   let f=0;
-  const legs=setInterval(()=>{ d.textContent=fr[(++f)%2]; },105);      // 다리 교차
+  const legs=setInterval(()=>{ d.textContent=fr[(++f)%2]; },155);      // 다리 교차
   setTimeout(()=>{
     clearInterval(legs);
     d.classList.remove('run'); d.textContent=ALLY_HIT;                 // 창 내지르기
