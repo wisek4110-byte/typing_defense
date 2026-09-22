@@ -121,8 +121,6 @@ button{font:inherit;color:inherit}
 .enemy.sp-green{color:var(--moss);border-color:var(--moss)}
 .enemy.sp-violet{color:var(--violet);border-color:var(--violet)}
 .enemy.frz{filter:saturate(.3)}
-.enemy.doomed{opacity:.42;filter:grayscale(.6);transition:opacity .2s,filter .2s}
-.enemy.doomed .ew{border-bottom-color:transparent}
 .enemy.die{transition:opacity .3s .15s;opacity:0}
 .enemy.die .ec{opacity:1}
 .float{position:absolute;pointer-events:none;font-weight:700;font-size:14px;white-space:nowrap;animation:up .9s ease-out forwards;z-index:5}
@@ -809,7 +807,6 @@ function place(e){
 }
 function removeEnemy(e,delay){
   S.enemies=S.enemies.filter(o=>o!==e);
-  e.el.classList.add('doomed');           // 이미 처치 — 강아지가 도착할 때까지 흐리게
   const go=()=>{
     if(e.ec) e.ec.textContent=faintArt((UNITS[e.kind]||UNITS.cat).art);
     e.el.classList.add('die');
