@@ -621,15 +621,17 @@ const UNITS = {
     ^^       ^^`},
   archer:  {name:'궁수 고양이', from:6,  w:2.0, spd:1.0,  hp:1, dmg:9,  gold:1.7, tmin:2, tmax:4,
     range:.38, aim:3.8, shot:5, ammo:'\u2192',
-    art:String.raw`      /\_/  }  ( o.o )
+    art:String.raw`      /\_/\
+  }  ( o.o )
  <}==(  v  )~
-  }  /|   |      ^^ ^^`},
+  }  /|   |\
+      ^^ ^^`},
   chariot: {name:'전차',        from:8,  w:1.9, spd:0.85, hp:2, dmg:15, gold:2,   tmin:3, tmax:4,
     art:String.raw`         /\_/\
         ( o.o )
  ,------(  v  )-.
- |_[#]___[#]___[#]|
-     (O)-----(O)`},
+ |_[#]__[#]__[#]|
+   (O)------(O)`},
   cannon:  {name:'대포',        from:13, w:1.6, spd:0.62, hp:2, dmg:20, gold:2.4, tmin:3, tmax:5,
     art:String.raw`               /\_/\
    _________  ( o.o )
@@ -640,7 +642,7 @@ const UNITS = {
     art:String.raw`            /\_/\
            ( o.o )
   =========[     ]
- |___________________|
+ |_________________|
   (O)(O)(O)(O)(O)(O)`},
   boss:    {name:'대장 고양이', from:999,w:0,   spd:0.5,  hp:3, dmg:40, gold:6,   tmin:5, tmax:5,
     art:String.raw`      \\|//
@@ -665,18 +667,18 @@ const ALLY_FACES=['o.o','^.^','o.^'];
 const ALLY_A=String.raw`   ,__,
   ( %F% )
  ~(  v  )=>
-   /|  |\
-    ^^ ^^`;
+  /|   |\
+   ^^ ^^`;
 const ALLY_B=String.raw`   ,__,
   ( %F% )
  ~(  v  )=>
-   |\  /|
-   ^^   ^^`;
+  |\   /|
+  ^^    ^^`;
 const ALLY_HIT=String.raw`   ,__,
   ( >o< )
  ~(  v  )==>
-   /|  |\
-    ^^ ^^`;
+  /|   |\
+   ^^ ^^`;
 const BURST=' \\|/\n-- --\n /|\\';
 // 쓰러지는 쪽은 눈이 x.x 가 된다
 const faintArt=a=>a.replace('o.o','x.x').replace('= o =','= x =');
