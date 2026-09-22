@@ -89,11 +89,17 @@ button{font:inherit;color:inherit}
 .frostzone.on{display:block}
 .field.frozen{box-shadow:inset 0 0 0 3px var(--frost)}
 .gate{position:absolute;left:0;top:0;bottom:0;width:4px;background:repeating-linear-gradient(0deg,var(--muted) 0 6px,transparent 6px 10px)}
-.enemy{position:absolute;top:0;left:0;white-space:nowrap;padding:0;border:0;background:none;
+.enemy{position:absolute;top:0;left:0;z-index:1;white-space:nowrap;padding:0;border:0;background:none;
   will-change:transform;display:flex;flex-direction:column;align-items:center;color:var(--ink);text-align:center}
 .enemy .ec{margin:0;font-family:var(--mono);font-size:12.5px;line-height:1.05;white-space:pre;opacity:.82;letter-spacing:-.3px}
 .enemy .ew{font-size:19px;font-weight:700;line-height:1.3;padding:0 3px;border-bottom:2px solid transparent}
 .enemy .ep{font-size:11px;line-height:1;height:12px;color:var(--ember);letter-spacing:1px}
+.enemy .ea{display:none;width:46px;height:3px;background:var(--line);margin-top:3px;border-radius:2px;overflow:hidden}
+.enemy.aim{z-index:2}
+.enemy.aim .ea{display:block}
+.enemy .ea i{display:block;height:100%;width:0;background:var(--torch)}
+.enemy.hot .ea i{background:var(--ember)}
+.enemy.hot .ec{opacity:1;animation:none}
 .enemy .chip{opacity:.28;text-decoration:line-through}
 .enemy .hit{color:var(--torch)}
 .enemy.lock .ew{border-bottom-color:var(--torch)}
@@ -103,6 +109,8 @@ button{font:inherit;color:inherit}
 .enemy.boss .ew{font-size:23px}
 @media (prefers-reduced-motion:no-preference){.enemy .ec{animation:bob .62s steps(2,end) infinite}}
 @keyframes bob{50%{transform:translateY(-1.5px)}}
+@media (prefers-reduced-motion:no-preference){.enemy.hot{animation:aimpulse .5s infinite}}
+@keyframes aimpulse{50%{opacity:.6}}
 .enemy.frz .ec{animation-play-state:paused}
 .enemy.sp-red{color:var(--ember);border-color:var(--ember)}
 .enemy.sp-gold{color:var(--gold);border-color:var(--gold)}
@@ -114,6 +122,7 @@ button{font:inherit;color:inherit}
 .float{position:absolute;pointer-events:none;font-weight:700;font-size:14px;white-space:nowrap;animation:up .9s ease-out forwards;z-index:5}
 @keyframes up{from{opacity:1;translate:0 0}to{opacity:0;translate:0 -34px}}
 .shot{position:absolute;z-index:6;pointer-events:none;font-weight:700;color:var(--torch);transition:left .18s linear,top .18s linear;font-size:13px}
+.shot.arrow{color:var(--ember);font-size:16px;z-index:7}
 .banner{position:absolute;left:50%;top:38%;translate:-50% -50%;font-family:var(--display);font-size:clamp(26px,4vw,46px);white-space:nowrap;pointer-events:none;z-index:8;text-align:center;animation:ban 1.8s ease-out forwards}
 .banner small{display:block;font-family:var(--mono);font-size:15px;color:var(--muted)}
 @keyframes ban{0%{opacity:0;scale:.9}15%{opacity:1;scale:1}80%{opacity:1}100%{opacity:0}}
@@ -288,6 +297,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
   .enemy.boss .ew{font-size:19px}
   .enemy.boss .ec{font-size:10px}
   .enemy .ep{font-size:9px;height:10px}
+  .enemy .ea{width:34px}
   .actions .act span{display:none}
   .stats{gap:10px}.stat b{font-size:17px}
   #typer{font-size:18px}
@@ -388,9 +398,9 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
     <section class="guide" aria-label="게임 방법">
       <p class="gh">게임 방법</p>
       <ol class="steps">
-        <li><b>1</b><span><em>무기를 든 고양이들이 글자를 달고 걸어옵니다.</em> 레벨이 오르면 기마 · 전차 · 대포 · 탱크가 차례로 합류합니다.</span></li>
+        <li><b>1</b><span><em>무기를 든 고양이들이 글자를 달고 걸어옵니다.</em> 레벨이 오르면 기마 · 궁수 · 전차 · 대포 · 탱크가 차례로 합류합니다.</span></li>
         <li><b>2</b><span><em>단어를 치고 Enter를 누르면 쓰러집니다.</em> 빠를수록 콤보와 골드가 붙습니다.</span></li>
-        <li><b>3</b><span><em>모은 골드로 성 아래에 타워를 세웁니다.</em> 레벨이 오르면 자리가 늘어납니다.</span></li>
+        <li><b>3</b><span><em>모은 골드로 성 아래에 타워를 세웁니다.</em> 궁수탑은 곧 쏘려는 적을, 방벽은 날아온 포탄을 막아 줍니다.</span></li>
       </ol>
       <ul class="legend">
         <li><b style="color:var(--ember)">빨간 단어</b>10초간 공격력 2배</li>
@@ -399,6 +409,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
         <li><b style="color:var(--moss)">초록 단어</b>성 체력 회복</li>
         <li><b style="color:var(--violet)">보라 단어</b>앞 글자 2개 깎기</li>
         <li><b>글자 아래 네모</b>남은 칸만큼 더 쳐야 함</li>
+        <li><b>주황 게이지</b>멀리서 성을 쏠 준비 중</li>
       </ul>
       <p class="keys"><kbd>Enter</kbd> 또는 <kbd>Space</kbd> 공격 · <kbd>Tab</kbd> 적을 미리 불러 골드 보너스 · <kbd>Esc</kbd> 멈춤, 한 번 더 누르면 처음 화면으로 · 레벨마다 능력 카드를 하나 고릅니다.</p>
     </section>
@@ -522,7 +533,7 @@ const STAGES = [
   {name:'왕성',       from:15, hp:280, slots:6},
 ];
 const TOWERS = {
-  archer:{name:'궁수탑', desc:'가장 앞선 적의 글자를 쏴서 떨어뜨림', cost:[30,45,75], art:[' _^_ ',' |>| ','_|_|_'], val:[4,3,2.2]},
+  archer:{name:'궁수탑', desc:'적의 글자를 떨어뜨림. 곧 쏘려는 원거리 적을 먼저 노림', cost:[30,45,75], art:[' _^_ ',' |>| ','_|_|_'], val:[4,3,2.2]},
   frost: {name:'서리탑', desc:'성 앞 구역의 적을 느리게 만듦',     cost:[40,60,90], art:[' \\*/ ',' -*- ',' /*\\ '], val:[.25,.35,.45]},
   mine:  {name:'금광',   desc:'8초마다 골드 생산',                 cost:[35,50,80], art:[' $$$ ','[###]','/   \\'], val:[3,5,8]},
   wall:  {name:'방벽',   desc:'성 대신 피해를 받아 주는 보호막',   cost:[30,45,70], art:['|=|=|','|=|=|','|_|_|'], val:[20,40,70]},
@@ -607,6 +618,11 @@ const UNITS = {
    \___________\~
     ||       ||
     ^^       ^^`},
+  archer:  {name:'궁수 고양이', from:6,  w:2.0, spd:1.0,  hp:1, dmg:9,  gold:1.7, tmin:2, tmax:4,
+    range:.38, aim:3.8, shot:5, ammo:'\u2192',
+    art:String.raw`      /\_/  }  ( o.o )
+ <}==(  v  )~
+  }  /|   |      ^^ ^^`},
   chariot: {name:'전차',        from:8,  w:1.9, spd:0.85, hp:2, dmg:15, gold:2,   tmin:3, tmax:4,
     art:String.raw`         /\_/\
         ( o.o )
@@ -618,7 +634,8 @@ const UNITS = {
    _________  ( o.o )
  (=_________]=(  v  )
      (O)  (O)  ^^ ^^`},
-  tank:    {name:'탱크',        from:18, w:1.4, spd:0.5,  hp:3, dmg:26, gold:3,   tmin:4, tmax:5,
+  tank:    {name:'탱크',        from:18, w:1.4, spd:0.5,  hp:3, dmg:26, gold:3.2, tmin:4, tmax:5,
+    range:.68, aim:6.0, shot:12, ammo:'\u25c6',
     art:String.raw`            /\_/\
            ( o.o )
   =========[     ]
@@ -702,7 +719,7 @@ function pickWord(tier){
 // ---------- enemies ----------
 function pickLane(){
   const free=[];
-  for(let l=0;l<LANES;l++){ if(!S.enemies.some(e=>e.lane===l && e.x>0.72)) free.push(l); }
+  for(let l=0;l<LANES;l++){ if(!S.enemies.some(e=>e.lane===l && (e.x>0.72||e.aiming))) free.push(l); }
   const pool=free.length?free:[...Array(LANES).keys()];
   return pool[Math.floor(Math.random()*pool.length)];
 }
@@ -721,9 +738,11 @@ function spawn(kind){
   }
   const el=document.createElement('div');
   el.className='enemy '+kind+(e.special?' sp-'+e.special:'');
-  el.innerHTML='<pre class="ec" aria-hidden="true"></pre><span class="ew"></span><span class="ep"></span>';
-  e.el=el; e.ec=el.children[0]; e.ew=el.children[1]; e.ep=el.children[2];
+  el.innerHTML='<pre class="ec" aria-hidden="true"></pre><span class="ew"></span><span class="ep"></span><span class="ea"><i></i></span>';
+  e.el=el; e.ec=el.children[0]; e.ew=el.children[1]; e.ep=el.children[2]; e.ea=el.children[3].firstChild;
   e.ec.textContent=U.art;
+  // 원거리 유닛은 사거리에 닿으면 멈춰서 조준한다
+  if(U.range){ e.range=Math.max(.12, U.range+(Math.random()*.12-.06)); e.aiming=false; e.aimT=0; }
   field.appendChild(el);
   renderEnemy(e,true);
   S.enemies.push(e);
@@ -841,17 +860,34 @@ function chip(e,n,fromTower=true){
   }
   renderEnemy(e,true);
 }
-function reach(e){
-  let d=e.dmg;
+// 성벽이 맞는 모든 경우 — 성문 돌파와 원거리 포격 —
+function siegeHit(d,y){
   if(S.shield>0){ const a=Math.min(S.shield,d); S.shield-=a; d-=a; }
   S.hp-=d; S.lastHit=S.time;
-  S.combo = S.comboKeep ? Math.floor(S.combo/2) : 0;
-  floatText(14,e.py,d>0?`-${d}`:'막음!',d>0?'var(--ember)':'var(--shield)');
+  floatText(14,y,d>0?`-${d}`:'막음!',d>0?'var(--ember)':'var(--shield)');
   art.classList.remove('hit'); void art.offsetWidth; art.classList.add('hit');
+  if(S.hp<=0) gameOver();
+}
+function reach(e){
+  S.combo = S.comboKeep ? Math.floor(S.combo/2) : 0;
+  const y=e.py;
   crumble(e);
   S.enemies=S.enemies.filter(o=>o!==e);
   e.el.remove();
-  if(S.hp<=0) gameOver();
+  siegeHit(e.dmg,y);
+}
+// 멀리서 성으로 화살·포탄을 날린다. 맞아도 콤보는 끊기지 않는다.
+function fireAt(e,U){
+  const y=e.py+Math.max(10,Math.round(e.el.offsetHeight*.42));
+  const sh=document.createElement('span');
+  sh.className='shot arrow'; sh.textContent=U.ammo;
+  sh.style.left=e.px+'px'; sh.style.top=y+'px';
+  const dur=Math.max(.3, e.px/760);
+  sh.style.transitionDuration=dur+'s, '+dur+'s';
+  field.appendChild(sh);
+  requestAnimationFrame(()=>{ sh.style.left='2px'; });
+  setTimeout(()=>{ sh.remove(); if(S&&S.running&&!S.paused&&!S.over) siegeHit(U.shot,y); }, dur*1000+20);
+  e.el.classList.remove('hot');
 }
 // 성에 닿은 글자가 앞글자부터 한 자씩 부서져 사라짐
 function crumble(e){
@@ -1026,6 +1062,18 @@ function updateDerived(){
   S.maxShield=S.towers.filter((t,i)=>t.type==='wall'&&i<STAGES[S.stage].slots).reduce((a,t)=>a+TOWERS.wall.val[t.lvl-1],0);
   S.shield=Math.min(S.shield,S.maxShield);
 }
+// 발사 직전인 원거리 적 우선, 없으면 가장 앞선 적
+function towerTarget(){
+  const live=S.enemies.filter(e=>e.rest.length);
+  if(!live.length) return null;
+  let best=null,bt=Infinity;
+  for(const e of live){
+    if(!e.aiming) continue;
+    const t=(UNITS[e.kind]||UNITS.cat).aim-e.aimT;
+    if(t<bt){ bt=t; best=e; }
+  }
+  return best || live.reduce((a,b)=>a.x<b.x?a:b);
+}
 function shoot(from,e){
   const fr=from.getBoundingClientRect(), fd=field.getBoundingClientRect();
   const s=document.createElement('span'); s.className='shot'; s.textContent='-->';
@@ -1043,7 +1091,7 @@ function updateTowers(dt){
       const iv=T.val[t.lvl-1]/S.towerSpd;
       t.cd+=dt;
       if(t.cd>=iv){
-        const tgt=S.enemies.filter(e=>e.rest.length).sort((a,b)=>a.x-b.x)[0];
+        const tgt=towerTarget();
         if(tgt){ t.cd=0; shoot(t.el,tgt); } else t.cd=iv;
       }
       const bar=t.el.querySelector('.cdbar i'); if(bar) bar.style.width=Math.min(100,t.cd/iv*100)+'%';
@@ -1069,7 +1117,21 @@ function update(dt){
   field.classList.toggle('frozen',frozen);
   const T=crossTime(S.level);
   for(const e of [...S.enemies]){
-    if(!frozen){
+    const U=UNITS[e.kind]||UNITS.cat;
+    if(e.range!=null && !e.aiming && e.x<=e.range){
+      // 같은 줄에 이미 자리 잡은 적이 있으면 더 앞으로 나가 자리를 잡는다
+      if(e.range>.13 && S.enemies.some(o=>o!==e && o.aiming && o.lane===e.lane && Math.abs(o.x-e.x)<.17)) e.range=Math.max(.12,e.range-.18);
+      else { e.aiming=true; e.aimT=0; e.el.classList.add('aim'); }
+    }
+    if(e.aiming){
+      if(!frozen){                                   // 빙결은 조준도 멈춘다
+        e.aimT+=dt;
+        if(e.aimT>=U.aim){ e.aimT=0; fireAt(e,U); }
+      }
+      const pr=Math.min(1,e.aimT/U.aim);
+      e.ea.style.width=(pr*100)+'%';
+      e.el.classList.toggle('hot',pr>.72);
+    } else if(!frozen){
       let sp=e.spd/T*(1-S.slowAll);
       if(e.x<FROST_ZONE && frostSlow>0) sp*=1-frostSlow;
       e.x-=sp*dt;
