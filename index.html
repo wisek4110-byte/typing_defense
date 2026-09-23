@@ -129,10 +129,11 @@ button{font:inherit;color:inherit}
 .shot.arrow{color:var(--ember);font-size:16px;z-index:7}
 .ally{position:absolute;z-index:5;pointer-events:none;margin:0;white-space:pre;
   font-family:var(--mono);font-size:12.5px;line-height:1.05;letter-spacing:-.3px;font-weight:700;
-  color:var(--moss);transition:left .3s linear,opacity .26s}
+  color:var(--moss);transition:left .3s linear,opacity .26s,transform .22s,color .22s}
 @media (prefers-reduced-motion:no-preference){.ally.run{animation:trot .31s steps(2,end) infinite}}
 @keyframes trot{50%{transform:translateY(-2px)}}
 .ally.back{opacity:0}
+.ally.down{color:var(--muted);transform:translateY(7px) rotate(-8deg);animation:none}
 .burst{position:absolute;z-index:6;pointer-events:none;margin:0;white-space:pre;
   font-family:var(--mono);font-size:13px;line-height:1;font-weight:700;color:var(--torch);
   transform-origin:center;animation:bang .42s ease-out forwards}
@@ -679,6 +680,11 @@ const ALLY_HIT=String.raw`   ,__,
  ~(  v  )==>
   /|   |\
    ^^ ^^`;
+const ALLY_DOWN=String.raw`   ,__,
+  ( x.x )
+ ~(  v  )
+  \|   |/
+   ^^ ^^`;
 const BURST=' \\|/\n-- --\n /|\\';
 // 쓰러지는 쪽은 눈이 x.x 가 된다
 const faintArt=a=>a.replace('o.o','x.x').replace('= o =','= x =');
@@ -875,6 +881,38 @@ function miss(){
   S.stats.miss++;
   S.combo = S.comboKeep ? Math.floor(S.combo/2) : 0;
   typer.classList.remove('bad'); void typer.offsetWidth; typer.classList.add('bad');
+  allyFail();
+}
+// 헛걸음한 강아지 — 조금 뛰어나갔다가 x.x 로 쓰러진다
+function allyFail(){
+  if(!S.running || S.paused || S.over) return;
+  if(field.querySelectorAll('.ally.fail').length>=3) return;      // 화면이 어지럽지 않게
+  const tgt=S.enemies.length? S.enemies.reduce((a,b)=>a.x<b.x?a:b) : null;
+  const lane=tgt? tgt.lane : Math.floor(Math.random()*LANES);
+  const laneH=laneBoxH/LANES;
+  const y=laneTop+Math.max(1, laneH*lane+(laneH-66)/2);
+  const face=ALLY_FACES[Math.floor(Math.random()*ALLY_FACES.length)];
+  const fr=[ALLY_A.replace('%F%',face), ALLY_B.replace('%F%',face)];
+  const d=document.createElement('pre');
+  d.className='ally run fail'; d.textContent=fr[0];
+  const x0=Math.max(2,castleW-34);
+  d.style.left=x0+'px'; d.style.top=y+'px';
+  field.appendChild(d);
+  const dw=d.offsetWidth||84;
+  const reach=tgt? Math.max(x0+70, tgt.px-dw-30) : x0+130;
+  const tx=Math.min(reach, x0+170);                               // 얼마 못 가고
+  const dur=Math.min(620, Math.max(220, Math.round((tx-x0)/360*1000)));
+  d.style.transitionDuration=dur+'ms';
+  requestAnimationFrame(()=>{ d.style.left=tx+'px'; });
+  let f=0;
+  const legs=setInterval(()=>{ d.textContent=fr[(++f)%2]; },155);
+  setTimeout(()=>{
+    clearInterval(legs);
+    d.classList.remove('run'); d.classList.add('down');
+    d.textContent=ALLY_DOWN;
+  },dur);
+  setTimeout(()=>d.classList.add('back'),dur+560);
+  setTimeout(()=>{ clearInterval(legs); d.remove(); },dur+860);
 }
 function logKeys(n){ S.keyLog.push([S.time,n]); S.stats.keys+=n; }
 function hit(e,t){
