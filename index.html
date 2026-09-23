@@ -664,7 +664,7 @@ function pickUnit(L){
 function unitTier(u){ const U=UNITS[u]||UNITS.cat; return Math.max(U.tmin,Math.min(U.tmax,pickTier(S.level))); }
 
 // 아군 — 성에서 달려 나와 적을 무찌르는 강아지 부대 (달리기 두 프레임)
-const ALLY_FACES=['o.o','^.^','o.^'];
+const ALLY_FACES=['o.o','^.^'];
 const ALLY_A=String.raw`   ,__,
   ( %F% )
  ~(  v  )=>
