@@ -379,7 +379,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
       <div class="freebox" id="freeBox" hidden>
         <label class="flabel" for="freeText">단어를 뽑을 글</label>
         <textarea id="freeText" aria-describedby="freeHelp" placeholder="소설 한 단락, 공부 노트, 좋아하는 가사 — 무엇이든 붙여 넣으세요."></textarea>
-        <p class="fhelp" id="freeHelp">두 글자 이상인 단어를 골라 적으로 만듭니다. 서로 다른 단어가 10개 이상 필요합니다.</p>
+        <p class="fhelp" id="freeHelp">글에서 조사와 어미를 떼어 낱말만 뽑아 적으로 만듭니다. 서로 다른 단어가 10개 이상 필요합니다.</p>
         <div class="chips" id="freeChips" aria-hidden="true"></div>
       </div>
     </section>
@@ -565,9 +565,16 @@ const JOSA=['에서는','에게는','께서는','으로는','에서도','에게�
   '이나','이랑','라도','만큼','밖에','에는','에도','에만','이며','이고',
   '은','는','을','를','의','에','로','와','과','도','만','랑','가','이'];
 // '이'·'가'로 끝나도 조사가 아닌 흔한 말들 (고양이, 바닷가 …)
-const KEEP_TAIL=/(쟁이|뱅이|랑이|둥이|엉이|팡이|덩이|멩이|깽이|양이|린이|숭이|걸이|놀이|먹이|줄이|아지|닷가|냇가|문가|술가|악가|설가|곡가|축가|업가|치가|역가|화가|길가|창가|강가)$/;
+const KEEP_TAIL=/(쟁이|뱅이|랑이|둥이|엉이|팡이|덩이|멩이|깽이|양이|린이|숭이|걸이|놀이|먹이|줄이|잡이|볶이|깎이|받이|맞이|벌이|살이|갈이|풀이|털이|아지|닷가|냇가|문가|술가|악가|설가|곡가|축가|업가|치가|역가|화가|길가|창가|강가)$/;
+// 두 글자일 때 확실히 조사인 것만 뗀다
+const SHORT_JOSA=['은','는','을','를','에','이','가'];
+// 두 글자인데 조사처럼 끝나는 낱말 — 그대로 둔다
+const KEEP2=new Set(('마을 가을 종이 아이 오이 사이 나이 길이 높이 넓이 깊이 굽이 구이 모이 '+
+  '물가 대가 평가 증가 추가 참가 국가 작가 휴가 단가 정가 원가 상가 주가 농가 민가 시가 고가 저가 호가 성가 물가 등가 초가').split(' '));
 // 뜻이 없어 적으로 삼지 않는 말
-const STOP_KO=new Set(('나는 나를 나의 내가 너는 너를 너의 네가 그는 그를 그의 그가 저는 저를 제가 우리 저희 당신 그것 이것 저것 여기 저기 거기 '+
+const STOP_KO=new Set(('것 수 등 및 나 너 그 저 내 네 뭐 더 또 못 잘 좀 왜 즉 '+
+  '한다 된다 있다 없다 이다 하다 되다 같다 간다 온다 본다 좋다 싫다 크다 작다 많다 적다 였다 었다 았다 했다 준다 왔다 갔다 봤다 '+
+  '나는 나를 나의 내가 너는 너를 너의 네가 그는 그를 그의 그가 저는 저를 제가 우리 저희 당신 그것 이것 저것 여기 저기 거기 '+
   '그리고 그러나 하지만 그런데 그래서 그러면 그래도 또는 혹은 그저 아주 매우 정말 너무 조금 많이 다시 또한 이미 아직 가장 바로 마치 오직 '+
   '때문 위해 통해 대해 관해 대한 위한 통한 동안 경우 정도 만큼 뿐만 이런 그런 저런 어떤 무슨 모든 여러 다른 각각 자신 자기 이제 지금 '+
   '하지 되지 하고 되고 이고 있고 없고 같고 하며 되며 이라 라고 이며 그때 이때 그래 그럼').split(' '));
@@ -575,13 +582,16 @@ const STOP_EN=new Set(['the','and','for','but','not','you','are','was','were','t
 
 function stripKo(t){
   for(let i=0;i<5;i++){
-    if(t.length<3 || KEEP_TAIL.test(t)) return t;        // 두 글자면 그만, 흔한 말이면 그대로
+    if(t.length<2 || KEEP_TAIL.test(t) || KEEP2.has(t)) return t;
     let hit=null;
-    for(const e of STEM_END){ if(t.length>e.length && t.endsWith(e)){ hit=e; break; } }
-    if(!hit) for(const j of JOSA){ if(t.length>j.length && t.endsWith(j)){ hit=j; break; } }
+    if(t.length>=3){
+      for(const e of STEM_END){ if(t.length>e.length && t.endsWith(e)){ hit=e; break; } }
+      if(!hit) for(const j of JOSA){ if(t.length>j.length && t.endsWith(j)){ hit=j; break; } }
+    } else {
+      for(const j of SHORT_JOSA){ if(t.endsWith(j)){ hit=j; break; } }
+    }
     if(!hit) return t;
-    if(t.length-hit.length<2) return '';                 // 어간이 한 글자뿐 (숲으로) → 버림
-    t=t.slice(0,-hit.length);
+    t=t.slice(0,-hit.length);                            // 숲으로 → 숲, 책을 → 책
   }
   return t;
 }
@@ -596,9 +606,8 @@ function extractWords(text){
     }
     if(!/^[가-힣]+$/.test(raw)) continue;
     if(raw.length>=3 && SENT_END.some(v=>raw.endsWith(v))) continue;   // 서술어는 통째로
-    if(raw.length===2 && /[를은는]$/.test(raw)) continue;              // 나는, 그를 …
     const w=stripKo(raw);
-    if(w.length>=2 && w.length<=8 && !STOP_KO.has(w)) out.add(w);
+    if(w.length>=1 && w.length<=8 && !STOP_KO.has(w)) out.add(w);   // 숲·비·책 같은 한 글자도 살린다
   }
   return [...out];
 }
@@ -1425,7 +1434,7 @@ function renderFree(showError){
     freeHelp.textContent = n===0 ? '글을 붙여 넣어야 시작할 수 있습니다.' : `단어가 ${n}개 뽑혔습니다. 10개 이상이 되도록 글을 더 넣어 주세요.`;
     freeHelp.className='fhelp err'; freeText.setAttribute('aria-invalid','true');
   } else {
-    freeHelp.textContent = n ? `단어 ${n}개를 뽑았습니다.${bad?' 10개 이상이 필요합니다.':''}` : '두 글자 이상인 단어를 골라 적으로 만듭니다. 서로 다른 단어가 10개 이상 필요합니다.';
+    freeHelp.textContent = n ? `단어 ${n}개를 뽑았습니다.${bad?' 10개 이상이 필요합니다.':''}` : '글에서 조사와 어미를 떼어 낱말만 뽑아 적으로 만듭니다. 서로 다른 단어가 10개 이상 필요합니다.';
     freeHelp.className='fhelp'; freeText.removeAttribute('aria-invalid');
   }
 }
