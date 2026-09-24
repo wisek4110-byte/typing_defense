@@ -553,20 +553,52 @@ const TOPICS = {
 // 단어 길이로 난이도 구간(2~5) 결정
 function tierOf(w){ const n=w.length; if(/[가-힣]/.test(w)) return n<=2?2:n===3?3:n===4?4:5; return n<=4?2:n===5?3:n<=7?4:5; }
 function buildDict(list){ const d={2:[],3:[],4:[],5:[]}; [...new Set(list)].forEach(w=>d[tierOf(w)].push(w)); return d; }
-// 자유 주제: 글에서 단어를 뽑고 흔한 조사를 떼어냄
-const VERB_END=['습니다','니다','어요','아요','해요','었다','았다','였다','했다','한다','된다','이다','하다','하는','하던','던','는데','지만','면서','려고'];
-const JOSA=['에서는','에게는','에는','에도','에만','한테','에게서','으로는','에서','에게','으로','까지','부터','처럼','보다','하고','이랑','이나','은','는','을','를','의','에','로','와','과','가','도','만'];
+// 자유 주제: 글에서 낱말만 뽑아낸다 — 조사와 어미를 떼고, 통째로 버릴 것은 버린다
+const SENT_END=['습니다','ㅂ니다','어요','아요','해요','에요','예요','네요','군요','지요','세요','나요','더라','구나','는가','던가','겠지','을까','ㄹ까','다'];
+const STEM_END=['스러웠','스러운','스럽게','스럽고','되었던','하였던','시키는','이라는',
+  '되는','하는','되던','하던','되며','하며','되고','하고','되어','하여','되지','하지','되면','하면','시킨','시켜',
+  '했던','였던','었던','았던','라는','적으로','적인','스런','로운','로워','같은','없는','있는',
+  '으며','면서','려고','는데','지만','거나','든지','어서','아서',
+  '된','한','될','할','됨','함','들'];
+const JOSA=['에서는','에게는','께서는','으로는','에서도','에게도','으로도','이라고',
+  '에서','에게','에겐','께서','으로','로서','로써','까지','부터','조차','마저','처럼','같이','보다','대로','한테',
+  '이나','이랑','라도','만큼','밖에','에는','에도','에만','이며','이고',
+  '은','는','을','를','의','에','로','와','과','도','만','랑','가','이'];
+// '이'·'가'로 끝나도 조사가 아닌 흔한 말들 (고양이, 바닷가 …)
+const KEEP_TAIL=/(쟁이|뱅이|랑이|둥이|엉이|팡이|덩이|멩이|깽이|양이|린이|숭이|걸이|놀이|먹이|줄이|아지|닷가|냇가|문가|술가|악가|설가|곡가|축가|업가|치가|역가|화가|길가|창가|강가)$/;
+// 뜻이 없어 적으로 삼지 않는 말
+const STOP_KO=new Set(('나는 나를 나의 내가 너는 너를 너의 네가 그는 그를 그의 그가 저는 저를 제가 우리 저희 당신 그것 이것 저것 여기 저기 거기 '+
+  '그리고 그러나 하지만 그런데 그래서 그러면 그래도 또는 혹은 그저 아주 매우 정말 너무 조금 많이 다시 또한 이미 아직 가장 바로 마치 오직 '+
+  '때문 위해 통해 대해 관해 대한 위한 통한 동안 경우 정도 만큼 뿐만 이런 그런 저런 어떤 무슨 모든 여러 다른 각각 자신 자기 이제 지금 '+
+  '하지 되지 하고 되고 이고 있고 없고 같고 하며 되며 이라 라고 이며 그때 이때 그래 그럼').split(' '));
+const STOP_EN=new Set(['the','and','for','but','not','you','are','was','were','this','that','with','from','have','has','had','they','them','their','there','then','than','what','when','which','who','will','would','can','could','should','into','about','been','some','more','most','much','very','just','only','also','over','after','before','because','while','where','your','our','its','his','her']);
+
+function stripKo(t){
+  for(let i=0;i<5;i++){
+    if(t.length<3 || KEEP_TAIL.test(t)) return t;        // 두 글자면 그만, 흔한 말이면 그대로
+    let hit=null;
+    for(const e of STEM_END){ if(t.length>e.length && t.endsWith(e)){ hit=e; break; } }
+    if(!hit) for(const j of JOSA){ if(t.length>j.length && t.endsWith(j)){ hit=j; break; } }
+    if(!hit) return t;
+    if(t.length-hit.length<2) return '';                 // 어간이 한 글자뿐 (숲으로) → 버림
+    t=t.slice(0,-hit.length);
+  }
+  return t;
+}
 function extractWords(text){
   const out=new Set();
-  for(let t of text.split(/[^0-9A-Za-z가-힣]+/)){
-    if(!t) continue;
-    if(/^[가-힣]+$/.test(t)){
-      if(t.length>=3 && VERB_END.some(v=>t.endsWith(v))) continue;
-      if(t.length>=3){ for(const j of JOSA){ if(t.endsWith(j)){ if(t.length-j.length>=2) t=t.slice(0,-j.length); break; } } }
-      if(t.length>=2 && t.length<=8) out.add(t);
-    } else if(/^[A-Za-z]+$/.test(t)){
-      t=t.toLowerCase(); if(t.length>=3 && t.length<=12) out.add(t);
+  for(const raw of String(text).split(/[^0-9A-Za-z가-힣]+/)){
+    if(!raw) continue;
+    if(/^[A-Za-z]+$/.test(raw)){
+      const w=raw.toLowerCase();
+      if(w.length>=3 && w.length<=12 && !STOP_EN.has(w)) out.add(w);
+      continue;
     }
+    if(!/^[가-힣]+$/.test(raw)) continue;
+    if(raw.length>=3 && SENT_END.some(v=>raw.endsWith(v))) continue;   // 서술어는 통째로
+    if(raw.length===2 && /[를은는]$/.test(raw)) continue;              // 나는, 그를 …
+    const w=stripKo(raw);
+    if(w.length>=2 && w.length<=8 && !STOP_KO.has(w)) out.add(w);
   }
   return [...out];
 }
