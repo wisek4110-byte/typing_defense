@@ -1605,7 +1605,7 @@ const BGM=(()=>{
   let el=null, want=store.get('typing-siege-bgm')!=='0', useSyn=false, ramp=0;
   function makeEl(){
     el=document.createElement('audio');
-    el.src='bgm.mp3'; el.loop=true; el.preload='none';
+    el.src='bgm.mp3'; el.loop=true; el.preload='auto';   // 첫 화면에서 미리 받아 둔다
     el.id='bgmAudio'; el.hidden=true;
     el.addEventListener('error',toSyn);
     document.body.appendChild(el);
@@ -1626,10 +1626,10 @@ const BGM=(()=>{
     if(useSyn){ SYN.start(fromTop); return; }
     if(!el) makeEl();
     if(fromTop){ try{ el.currentTime=0; }catch(e){} }
-    el.volume=0;
+    el.volume=.55;                       // 곧바로 들리게, 짧게만 올린다
     const pr=el.play();
     if(pr&&pr.catch) pr.catch(err=>{ if(err&&err.name==='NotAllowedError') return; toSyn(); });
-    setVol(1,900);
+    setVol(1,220);
   }
   function halt(rewind){
     if(useSyn){ rewind?SYN.stop():SYN.pause(); return; }
@@ -1645,11 +1645,14 @@ const BGM=(()=>{
     setOn(v){
       want=v; store.set('typing-siege-bgm', v?'1':'0');
       if(!v){ halt(false); return; }
+      if(!el && !useSyn) makeEl();        // 켜 두면 미리 받아 둔다
       if(S && S.running && !S.over && !$('startOv').classList.contains('on')) go(false);
     },
-    wanted(){ return want; }
+    wanted(){ return want; },
+    prime(){ if(want && !el && !useSyn) makeEl(); }   // 첫 화면에서 미리 준비
   };
 })();
+BGM.prime();
 function bgmLabel(){
   const on=BGM.wanted();
   const a=$('bgmBtn'), b=$('bgmBtn2');
