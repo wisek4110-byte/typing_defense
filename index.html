@@ -1522,47 +1522,51 @@ $('retryBtn').addEventListener('click',start);
 $('againBtn').addEventListener('click',quitToStart);
 
 
-// ---------- 배경음악 — 자체 합성(Am·F·C·G·Am·F·Dm·E, 84BPM) ----------
+// ---------- 배경음악 — 자체 합성 ----------
+// 참고 영상(Age of War)의 음악 특성을 분석해 맞춤: 76BPM · D장조 · 중역 중심 행진곡풍
 const BGM=(()=>{
-  const BPM=84, SP=30/BPM, VOL=1.10;
-  const CHORD=[[45,57,60,64],[41,53,57,60],[36,48,52,55],[43,55,59,62],
-               [45,57,60,64],[41,53,57,60],[38,50,53,57],[40,52,56,59]];
-  const MELO=[76,0,74,72,0,69,0,72, 72,0,69,65,0,69,0,0,
-              67,0,72,76,0,74,0,72, 74,0,71,67,0, 0,0,0,
-              69,0,72,76,0,77,0,76, 74,0,72,69,0,65,0,0,
-              65,0,69,74,0,72,0,69, 71,0,68,64,0, 0,0,0];
+  const BPM=76, SP=30/BPM, VOL=2.35;
+  const CHORD=[[38,54,57,62],[47,54,59,62],[43,55,59,62],[45,57,61,64],
+               [38,54,57,62],[43,55,59,62],[45,57,61,64],[38,54,57,62]];   // D Bm G A D G A D
+  const MELO=[86,0, 0,83,0,81,0, 0,  83,0, 0,81,0,78,0, 0,
+              81,0,83, 0,86,0,83, 0,  81,0, 0, 0,76,0,78, 0,
+              74,0,78, 0,81,0,86, 0,  83,0, 0,81,0,78,0, 0,
+              76,0,78, 0,81,0,83, 0,  86,0, 0, 0, 0,0, 0, 0];
   const hz=m=>440*Math.pow(2,(m-69)/12);
   let ctx=null, bus=null, master=null, timer=0, step=0, next=0, want=false;
   function tone(t,f,dur,type,vol,det){
     const o=ctx.createOscillator(), g=ctx.createGain();
     o.type=type; o.frequency.value=f; if(det) o.detune.value=det;
     g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(vol,t+.03);
+    g.gain.linearRampToValueAtTime(vol,t+.035);
     g.gain.exponentialRampToValueAtTime(.0001,t+dur);
     o.connect(g); g.connect(bus); o.start(t); o.stop(t+dur+.05);
   }
   function kick(t,vol){
     const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type='sine'; o.frequency.setValueAtTime(120,t);
-    o.frequency.exponentialRampToValueAtTime(42,t+.09);
-    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22);
-    o.connect(g); g.connect(bus); o.start(t); o.stop(t+.3);
+    o.type='sine'; o.frequency.setValueAtTime(150,t);
+    o.frequency.exponentialRampToValueAtTime(58,t+.08);
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.18);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t+.25);
   }
-  function hat(t,vol){
-    const len=Math.ceil(ctx.sampleRate*.045);
+  function snare(t,vol){
+    const len=Math.ceil(ctx.sampleRate*.13);
     const b=ctx.createBuffer(1,len,ctx.sampleRate), d=b.getChannelData(0);
-    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.5);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2);
     const n=ctx.createBufferSource(); n.buffer=b;
-    const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=7000;
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1500; bp.Q.value=.8;
     const g=ctx.createGain(); g.gain.value=vol;
-    n.connect(hp); hp.connect(g); g.connect(bus); n.start(t);
+    n.connect(bp); bp.connect(g); g.connect(bus); n.start(t);
   }
   function emit(t,st){
     const bar=(st>>3)&7, beat=st&7, ch=CHORD[bar];
-    if(beat===0) for(let i=1;i<4;i++) tone(t,hz(ch[i]),SP*7.6,'triangle',.075-(i-1)*.016,(i-2)*6);
-    if(beat===0||beat===4){ tone(t,hz(ch[0]),SP*2.6,'sine',.13); kick(t,.20); }
-    const m=MELO[st%64]; if(m) tone(t,hz(m),SP*1.5,'sine',.085);
-    if(beat%2===1) hat(t,.020);
+    if(beat===0) for(let i=1;i<4;i++){
+      tone(t,hz(ch[i]),SP*7.6,'triangle',.030-(i-1)*.005,(i-2)*6);
+      tone(t,hz(ch[i]+12),SP*7.2,'sawtooth',.038-(i-1)*.007,(i-2)*7);
+    }
+    if(beat===0||beat===4){ tone(t,hz(ch[0]),SP*3.4,'sine',.032); kick(t,.038); }
+    if(beat===2||beat===6) snare(t,.105);
+    const m=MELO[st%64]; if(m) tone(t,hz(m),SP*1.9,'sawtooth',.090,3);
   }
   function pump(){
     if(!ctx) return;
@@ -1574,7 +1578,7 @@ const BGM=(()=>{
     if(!AC) return false;
     try{ ctx=new AC(); }catch(e){ return false; }
     master=ctx.createGain(); master.gain.value=0;
-    bus=ctx.createBiquadFilter(); bus.type='lowpass'; bus.frequency.value=2300; bus.Q.value=.35;
+    bus=ctx.createBiquadFilter(); bus.type='lowpass'; bus.frequency.value=3400; bus.Q.value=.35;
     bus.connect(master); master.connect(ctx.destination);
     return true;
   }
@@ -1595,7 +1599,7 @@ const BGM=(()=>{
       want=false; fade(0,.5); store.set('typing-siege-bgm','0');
       setTimeout(()=>{ if(!want && timer){ clearInterval(timer); timer=0; } },700);
     },
-    duck(q){ if(want) fade(q?VOL*.3:VOL,.4); },       // 멈춤 중에는 작게
+    duck(q){ if(want) fade(q?VOL*.3:VOL,.4); },
     wanted(){ return want; }
   };
 })();
