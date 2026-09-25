@@ -1370,7 +1370,7 @@ function setPause(p){
   if(!S.running||S.over||S.pendingLevel) return;
   S.paused=p; $('pauseOv').classList.toggle('on',p);
   $('pauseBtn').textContent=p?'계속':'일시정지';
-  BGM.duck(p);
+  p?BGM.pause():BGM.resume();
   if(p){ closeMenu(); pauseStats(); setTimeout(()=>$('resumeBtn').focus(),50); }
   else typer.focus();
 }
@@ -1399,6 +1399,7 @@ function quitToStart(){
   $('pauseBtn').textContent='일시정지';
   typer.value='';
   S=newState(); S.stage=0; S.maxHp=STAGES[0].hp; S.hp=S.maxHp; applyStage(false); hud(); S.running=false;
+  BGM.stop();                                   // 메인 화면에서는 음악을 멈춘다
   $('startOv').classList.add('on');
   showBest();
   setTimeout(()=>$('startBtn').focus(),50);
@@ -1493,6 +1494,7 @@ function start(){
   measure();
   S.running=true; S.nextInterval=2; S.spawnT=0;
   typer.value=''; typer.focus();
+  BGM.play();
   banner('성을 지켜라',`${topic==='free'?'내 글의':TOPICS[topic].name} 단어가 몰려옵니다`);
   hud();
 }
@@ -1505,6 +1507,7 @@ function gameOver(){
     ['도달 레벨',`Lv ${S.level}`],['평균 타수',`${avg}타`],['최고 타수',`${S.stats.bestKpm}타`],
     ['정확도',`${acc}%`],['쓰러뜨린 적',S.stats.kills],['최고 콤보',S.maxCombo],['성의 모습',STAGES[S.stage].name],['최고 기록',`Lv ${best}`]
   ].map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
+  BGM.pause();
   $('overOv').classList.add('on');
   setTimeout(()=>$('retryBtn').focus(),50);
 }
@@ -1583,19 +1586,23 @@ const BGM=(()=>{
     function fade(to,sec){ if(!ctx) return;
       const g=master.gain, t=ctx.currentTime;
       g.cancelScheduledValues(t); g.setValueAtTime(g.value,t); g.linearRampToValueAtTime(to,t+sec); }
+    function halt(sec){
+      if(!live) return; live=false; fade(0,sec);
+      setTimeout(()=>{ if(!live && timer){ clearInterval(timer); timer=0; } },sec*1000+200);
+    }
     return {
-      on(){ if(!ctx && !build()) return false;
+      start(fromTop){ if(!ctx && !build()) return false;
+            if(fromTop) step=0;
             if(ctx.state==='suspended' && ctx.resume) ctx.resume();
             if(!timer){ next=ctx.currentTime+.1; timer=setInterval(pump,140); pump(); }
-            live=true; fade(VOL,1.4); return true; },
-      off(){ if(!live) return; live=false; fade(0,.5);
-             setTimeout(()=>{ if(!live && timer){ clearInterval(timer); timer=0; } },700); },
-      duck(q){ if(live) fade(q?VOL*.3:VOL,.4); },
+            live=true; fade(VOL,1.0); return true; },
+      pause(){ halt(.35); },                      // 마디 위치는 그대로
+      stop(){ halt(.35); step=0; },               // 처음으로
       live(){ return live; }
     };
   })();
 
-  let el=null, want=false, useSyn=false, ramp=0;
+  let el=null, want=store.get('typing-siege-bgm')!=='0', useSyn=false, ramp=0;
   function makeEl(){
     el=document.createElement('audio');
     el.src='bgm.mp3'; el.loop=true; el.preload='none';
@@ -1603,7 +1610,7 @@ const BGM=(()=>{
     el.addEventListener('error',toSyn);
     document.body.appendChild(el);
   }
-  function toSyn(){ if(useSyn||!want) return; useSyn=true; if(el){ try{el.pause();}catch(e){} } SYN.on(); }
+  function toSyn(){ if(useSyn||!want) return; useSyn=true; if(el){ try{el.pause();}catch(e){} } SYN.start(false); }
   function setVol(to,ms){                       // 부드럽게 오르내리게
     if(!el) return;
     clearInterval(ramp);
@@ -1614,42 +1621,45 @@ const BGM=(()=>{
       if(k>=1) clearInterval(ramp);
     },40);
   }
+  function go(fromTop){
+    if(!want) return;
+    if(useSyn){ SYN.start(fromTop); return; }
+    if(!el) makeEl();
+    if(fromTop){ try{ el.currentTime=0; }catch(e){} }
+    el.volume=0;
+    const pr=el.play();
+    if(pr&&pr.catch) pr.catch(err=>{ if(err&&err.name==='NotAllowedError') return; toSyn(); });
+    setVol(1,900);
+  }
+  function halt(rewind){
+    if(useSyn){ rewind?SYN.stop():SYN.pause(); return; }
+    if(!el) return;
+    setVol(0,300);
+    setTimeout(()=>{ try{ el.pause(); if(rewind) el.currentTime=0; }catch(e){} },320);
+  }
   return {
-    on(){
-      want=true; store.set('typing-siege-bgm','1');
-      if(useSyn){ SYN.on(); return true; }
-      if(!el) makeEl();
-      el.volume=0;
-      const pr=el.play();
-      if(pr&&pr.catch) pr.catch(err=>{ if(err&&err.name==='NotAllowedError') return; toSyn(); });
-      setVol(1,1200);
-      return true;
+    play(){ go(true); },          // 게임 시작 — 처음부터
+    resume(){ go(false); },       // 일시정지 해제 — 멈춘 지점부터
+    pause(){ halt(false); },      // 일시정지 — 위치 유지
+    stop(){ halt(true); },        // 메인 화면 — 정지 후 처음으로
+    setOn(v){
+      want=v; store.set('typing-siege-bgm', v?'1':'0');
+      if(!v){ halt(false); return; }
+      if(S && S.running && !S.over && !$('startOv').classList.contains('on')) go(false);
     },
-    off(){
-      want=false; store.set('typing-siege-bgm','0');
-      SYN.off();
-      if(el){ setVol(0,400); setTimeout(()=>{ if(!want){ try{el.pause();}catch(e){} } },450); }
-    },
-    duck(q){ if(!want) return; SYN.duck(q); if(el && !useSyn) setVol(q?.3:1,350); },
     wanted(){ return want; }
   };
 })();
 function bgmLabel(){
-  // 첫 조작 전이라 아직 안 울렸어도, 켤 예정이면 켜진 것으로 보여 준다
-  const on=BGM.wanted()||store.get('typing-siege-bgm')!=='0', t=on?'배경음 켜짐':'배경음 꺼짐';
+  const on=BGM.wanted();
   const a=$('bgmBtn'), b=$('bgmBtn2');
-  if(a) a.textContent=t; if(b) b.textContent=on?'배경음':'음소거';
+  if(a) a.textContent=on?'배경음 켜짐':'배경음 꺼짐';
+  if(b) b.textContent=on?'배경음':'음소거';
 }
-function bgmToggle(){ BGM.wanted()?BGM.off():BGM.on(); bgmLabel(); }
+function bgmToggle(){ BGM.setOn(!BGM.wanted()); bgmLabel(); }
 $('bgmBtn').addEventListener('click',bgmToggle);
 $('bgmBtn2').addEventListener('click',()=>{ bgmToggle(); typer.focus(); });
-// 브라우저 정책상 첫 조작 뒤에야 소리를 낼 수 있다
-(function(){
-  if(store.get('typing-siege-bgm')==='0'){ bgmLabel(); return; }
-  const go=()=>{ BGM.on(); bgmLabel(); document.removeEventListener('pointerdown',go); document.removeEventListener('keydown',go); };
-  document.addEventListener('pointerdown',go); document.addEventListener('keydown',go);
-  bgmLabel();
-})();
+bgmLabel();
 
 // ---------- 화면 밝기 ----------
 const themeBtn=$('themeBtn');
