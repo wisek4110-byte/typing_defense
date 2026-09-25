@@ -1522,84 +1522,115 @@ $('retryBtn').addEventListener('click',start);
 $('againBtn').addEventListener('click',quitToStart);
 
 
-// ---------- 배경음악 — 자체 합성 ----------
-// 참고 영상(Age of War)의 음악 특성을 분석해 맞춤: 76BPM · D장조 · 중역 중심 행진곡풍
+// ---------- 배경음악 ----------
+// bgm.mp3 를 틀고, 파일을 못 읽으면(HTML만 따로 열었을 때) 합성음으로 대체한다.
+// 음원은 미리 -27.5 LUFS 로 맞춰 두어 타자 소리를 덮지 않는다.
 const BGM=(()=>{
-  const BPM=76, SP=30/BPM, VOL=2.35;
-  const CHORD=[[38,54,57,62],[47,54,59,62],[43,55,59,62],[45,57,61,64],
-               [38,54,57,62],[43,55,59,62],[45,57,61,64],[38,54,57,62]];   // D Bm G A D G A D
-  const MELO=[86,0, 0,83,0,81,0, 0,  83,0, 0,81,0,78,0, 0,
-              81,0,83, 0,86,0,83, 0,  81,0, 0, 0,76,0,78, 0,
-              74,0,78, 0,81,0,86, 0,  83,0, 0,81,0,78,0, 0,
-              76,0,78, 0,81,0,83, 0,  86,0, 0, 0, 0,0, 0, 0];
-  const hz=m=>440*Math.pow(2,(m-69)/12);
-  let ctx=null, bus=null, master=null, timer=0, step=0, next=0, want=false;
-  function tone(t,f,dur,type,vol,det){
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type=type; o.frequency.value=f; if(det) o.detune.value=det;
-    g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(vol,t+.035);
-    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-    o.connect(g); g.connect(bus); o.start(t); o.stop(t+dur+.05);
-  }
-  function kick(t,vol){
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type='sine'; o.frequency.setValueAtTime(150,t);
-    o.frequency.exponentialRampToValueAtTime(58,t+.08);
-    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.18);
-    o.connect(g); g.connect(bus); o.start(t); o.stop(t+.25);
-  }
-  function snare(t,vol){
-    const len=Math.ceil(ctx.sampleRate*.13);
-    const b=ctx.createBuffer(1,len,ctx.sampleRate), d=b.getChannelData(0);
-    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2);
-    const n=ctx.createBufferSource(); n.buffer=b;
-    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1500; bp.Q.value=.8;
-    const g=ctx.createGain(); g.gain.value=vol;
-    n.connect(bp); bp.connect(g); g.connect(bus); n.start(t);
-  }
-  function emit(t,st){
-    const bar=(st>>3)&7, beat=st&7, ch=CHORD[bar];
-    if(beat===0) for(let i=1;i<4;i++){
-      tone(t,hz(ch[i]),SP*7.6,'triangle',.030-(i-1)*.005,(i-2)*6);
-      tone(t,hz(ch[i]+12),SP*7.2,'sawtooth',.038-(i-1)*.007,(i-2)*7);
+  // ── 파일을 못 쓸 때의 합성 백업: 76BPM · D장조 ──
+  const SYN=(()=>{
+    const BPM=76, SP=30/BPM, VOL=2.35;
+    const CHORD=[[38,54,57,62],[47,54,59,62],[43,55,59,62],[45,57,61,64],
+                 [38,54,57,62],[43,55,59,62],[45,57,61,64],[38,54,57,62]];
+    const MELO=[86,0, 0,83,0,81,0, 0,  83,0, 0,81,0,78,0, 0,
+                81,0,83, 0,86,0,83, 0,  81,0, 0, 0,76,0,78, 0,
+                74,0,78, 0,81,0,86, 0,  83,0, 0,81,0,78,0, 0,
+                76,0,78, 0,81,0,83, 0,  86,0, 0, 0, 0,0, 0, 0];
+    const hz=m=>440*Math.pow(2,(m-69)/12);
+    let ctx=null, bus=null, master=null, timer=0, step=0, next=0, live=false;
+    function tone(t,f,dur,type,vol,det){
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.type=type; o.frequency.value=f; if(det) o.detune.value=det;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(vol,t+.035);
+      g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+      o.connect(g); g.connect(bus); o.start(t); o.stop(t+dur+.05);
     }
-    if(beat===0||beat===4){ tone(t,hz(ch[0]),SP*3.4,'sine',.032); kick(t,.038); }
-    if(beat===2||beat===6) snare(t,.105);
-    const m=MELO[st%64]; if(m) tone(t,hz(m),SP*1.9,'sawtooth',.090,3);
+    function kick(t,vol){
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(150,t);
+      o.frequency.exponentialRampToValueAtTime(58,t+.08);
+      g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.18);
+      o.connect(g); g.connect(bus); o.start(t); o.stop(t+.25);
+    }
+    function snare(t,vol){
+      const len=Math.ceil(ctx.sampleRate*.13);
+      const b=ctx.createBuffer(1,len,ctx.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2);
+      const n=ctx.createBufferSource(); n.buffer=b;
+      const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1500; bp.Q.value=.8;
+      const g=ctx.createGain(); g.gain.value=vol;
+      n.connect(bp); bp.connect(g); g.connect(bus); n.start(t);
+    }
+    function emit(t,st){
+      const bar=(st>>3)&7, beat=st&7, ch=CHORD[bar];
+      if(beat===0) for(let i=1;i<4;i++){
+        tone(t,hz(ch[i]),SP*7.6,'triangle',.030-(i-1)*.005,(i-2)*6);
+        tone(t,hz(ch[i]+12),SP*7.2,'sawtooth',.038-(i-1)*.007,(i-2)*7);
+      }
+      if(beat===0||beat===4){ tone(t,hz(ch[0]),SP*3.4,'sine',.032); kick(t,.038); }
+      if(beat===2||beat===6) snare(t,.105);
+      const m=MELO[st%64]; if(m) tone(t,hz(m),SP*1.9,'sawtooth',.090,3);
+    }
+    function pump(){ if(!ctx) return; let n=0;
+      while(next<ctx.currentTime+.45 && n<32){ emit(next,step); next+=SP; step++; n++; } }
+    function build(){
+      const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+      try{ ctx=new AC(); }catch(e){ return false; }
+      master=ctx.createGain(); master.gain.value=0;
+      bus=ctx.createBiquadFilter(); bus.type='lowpass'; bus.frequency.value=3400; bus.Q.value=.35;
+      bus.connect(master); master.connect(ctx.destination); return true;
+    }
+    function fade(to,sec){ if(!ctx) return;
+      const g=master.gain, t=ctx.currentTime;
+      g.cancelScheduledValues(t); g.setValueAtTime(g.value,t); g.linearRampToValueAtTime(to,t+sec); }
+    return {
+      on(){ if(!ctx && !build()) return false;
+            if(ctx.state==='suspended' && ctx.resume) ctx.resume();
+            if(!timer){ next=ctx.currentTime+.1; timer=setInterval(pump,140); pump(); }
+            live=true; fade(VOL,1.4); return true; },
+      off(){ if(!live) return; live=false; fade(0,.5);
+             setTimeout(()=>{ if(!live && timer){ clearInterval(timer); timer=0; } },700); },
+      duck(q){ if(live) fade(q?VOL*.3:VOL,.4); },
+      live(){ return live; }
+    };
+  })();
+
+  let el=null, want=false, useSyn=false, ramp=0;
+  function makeEl(){
+    el=document.createElement('audio');
+    el.src='bgm.mp3'; el.loop=true; el.preload='none';
+    el.id='bgmAudio'; el.hidden=true;
+    el.addEventListener('error',toSyn);
+    document.body.appendChild(el);
   }
-  function pump(){
-    if(!ctx) return;
-    let n=0;
-    while(next<ctx.currentTime+.45 && n<32){ emit(next,step); next+=SP; step++; n++; }
-  }
-  function build(){
-    const AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC) return false;
-    try{ ctx=new AC(); }catch(e){ return false; }
-    master=ctx.createGain(); master.gain.value=0;
-    bus=ctx.createBiquadFilter(); bus.type='lowpass'; bus.frequency.value=3400; bus.Q.value=.35;
-    bus.connect(master); master.connect(ctx.destination);
-    return true;
-  }
-  function fade(to,sec){
-    if(!ctx) return;
-    const g=master.gain, t=ctx.currentTime;
-    g.cancelScheduledValues(t); g.setValueAtTime(g.value,t); g.linearRampToValueAtTime(to,t+sec);
+  function toSyn(){ if(useSyn||!want) return; useSyn=true; if(el){ try{el.pause();}catch(e){} } SYN.on(); }
+  function setVol(to,ms){                       // 부드럽게 오르내리게
+    if(!el) return;
+    clearInterval(ramp);
+    const from=el.volume, t0=Date.now();
+    ramp=setInterval(()=>{
+      const k=Math.min(1,(Date.now()-t0)/ms);
+      try{ el.volume=from+(to-from)*k; }catch(e){}
+      if(k>=1) clearInterval(ramp);
+    },40);
   }
   return {
     on(){
-      want=true;
-      if(!ctx && !build()){ want=false; return false; }
-      if(ctx.state==='suspended' && ctx.resume) ctx.resume();
-      if(!timer){ next=ctx.currentTime+.1; timer=setInterval(pump,140); pump(); }
-      fade(VOL,1.4); store.set('typing-siege-bgm','1'); return true;
+      want=true; store.set('typing-siege-bgm','1');
+      if(useSyn){ SYN.on(); return true; }
+      if(!el) makeEl();
+      el.volume=0;
+      const pr=el.play();
+      if(pr&&pr.catch) pr.catch(err=>{ if(err&&err.name==='NotAllowedError') return; toSyn(); });
+      setVol(1,1200);
+      return true;
     },
     off(){
-      want=false; fade(0,.5); store.set('typing-siege-bgm','0');
-      setTimeout(()=>{ if(!want && timer){ clearInterval(timer); timer=0; } },700);
+      want=false; store.set('typing-siege-bgm','0');
+      SYN.off();
+      if(el){ setVol(0,400); setTimeout(()=>{ if(!want){ try{el.pause();}catch(e){} } },450); }
     },
-    duck(q){ if(want) fade(q?VOL*.3:VOL,.4); },
+    duck(q){ if(!want) return; SYN.duck(q); if(el && !useSyn) setVol(q?.3:1,350); },
     wanted(){ return want; }
   };
 })();
