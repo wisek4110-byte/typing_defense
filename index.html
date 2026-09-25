@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>타자 공성전</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23151a28'/%3E%3Cg stroke='%23f2b441' stroke-width='2.1' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6.5 12.5 L9.5 5 L13 11'/%3E%3Cpath d='M19 11 L22.5 5 L25.5 12.5'/%3E%3Cpath d='M13 11 L19 11'/%3E%3Cpath d='M6 14 Q3.2 20 6 26.5'/%3E%3Cpath d='M26 14 Q28.8 20 26 26.5'/%3E%3C/g%3E%3Ccircle cx='12.3' cy='18' r='2.1' fill='%23f2b441'/%3E%3Ccircle cx='19.7' cy='18' r='2.1' fill='%23f2b441'/%3E%3Ccircle cx='16' cy='20' r='1.1' fill='%23f2b441'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23151a28'/%3E%3Cg stroke='%23f2b441' stroke-width='2.1' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6.5 12.5 L9.5 5 L13 11'/%3E%3Cpath d='M19 11 L22.5 5 L25.5 12.5'/%3E%3Cpath d='M13 11 L19 11'/%3E%3Cpath d='M6 14 Q3.2 20 6 26.5'/%3E%3Cpath d='M26 14 Q28.8 20 26 26.5'/%3E%3C/g%3E%3Ccircle cx='12.3' cy='18' r='2.1' fill='%23f2b441'/%3E%3Ccircle cx='19.7' cy='18' r='2.1' fill='%23f2b441'/%3E%3Ccircle cx='16' cy='20' r='1.1' fill='%23f2b441'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet">
@@ -326,6 +328,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
     </div>
     <div class="buffs" id="buffs"></div>
     <div class="hudbtns">
+      <button class="iconbtn" id="bgmBtn2" type="button" title="배경음 켜기/끄기">배경음</button>
       <button class="iconbtn" id="pauseBtn" title="일시정지 (Esc)" type="button">일시정지</button>
     </div>
   </header>
@@ -359,6 +362,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
 <div class="overlay on" id="startOv" role="dialog" aria-modal="true" aria-labelledby="gameTitle">
   <div class="start">
     <div class="topbar">
+      <button class="ghostbtn" id="bgmBtn" type="button">배경음</button>
       <button class="ghostbtn" id="themeBtn" type="button">화면 밝기</button>
     </div>
 
@@ -1366,6 +1370,7 @@ function setPause(p){
   if(!S.running||S.over||S.pendingLevel) return;
   S.paused=p; $('pauseOv').classList.toggle('on',p);
   $('pauseBtn').textContent=p?'계속':'일시정지';
+  BGM.duck(p);
   if(p){ closeMenu(); pauseStats(); setTimeout(()=>$('resumeBtn').focus(),50); }
   else typer.focus();
 }
@@ -1515,6 +1520,101 @@ $('howOv').addEventListener('click',ev=>{ if(ev.target===$('howOv')) setHow(fals
 $('startBtn').addEventListener('click',start);
 $('retryBtn').addEventListener('click',start);
 $('againBtn').addEventListener('click',quitToStart);
+
+
+// ---------- 배경음악 — 자체 합성(Am·F·C·G·Am·F·Dm·E, 84BPM) ----------
+const BGM=(()=>{
+  const BPM=84, SP=30/BPM, VOL=1.10;
+  const CHORD=[[45,57,60,64],[41,53,57,60],[36,48,52,55],[43,55,59,62],
+               [45,57,60,64],[41,53,57,60],[38,50,53,57],[40,52,56,59]];
+  const MELO=[76,0,74,72,0,69,0,72, 72,0,69,65,0,69,0,0,
+              67,0,72,76,0,74,0,72, 74,0,71,67,0, 0,0,0,
+              69,0,72,76,0,77,0,76, 74,0,72,69,0,65,0,0,
+              65,0,69,74,0,72,0,69, 71,0,68,64,0, 0,0,0];
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  let ctx=null, bus=null, master=null, timer=0, step=0, next=0, want=false;
+  function tone(t,f,dur,type,vol,det){
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type; o.frequency.value=f; if(det) o.detune.value=det;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol,t+.03);
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t+dur+.05);
+  }
+  function kick(t,vol){
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(120,t);
+    o.frequency.exponentialRampToValueAtTime(42,t+.09);
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t+.3);
+  }
+  function hat(t,vol){
+    const len=Math.ceil(ctx.sampleRate*.045);
+    const b=ctx.createBuffer(1,len,ctx.sampleRate), d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.5);
+    const n=ctx.createBufferSource(); n.buffer=b;
+    const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=7000;
+    const g=ctx.createGain(); g.gain.value=vol;
+    n.connect(hp); hp.connect(g); g.connect(bus); n.start(t);
+  }
+  function emit(t,st){
+    const bar=(st>>3)&7, beat=st&7, ch=CHORD[bar];
+    if(beat===0) for(let i=1;i<4;i++) tone(t,hz(ch[i]),SP*7.6,'triangle',.075-(i-1)*.016,(i-2)*6);
+    if(beat===0||beat===4){ tone(t,hz(ch[0]),SP*2.6,'sine',.13); kick(t,.20); }
+    const m=MELO[st%64]; if(m) tone(t,hz(m),SP*1.5,'sine',.085);
+    if(beat%2===1) hat(t,.020);
+  }
+  function pump(){
+    if(!ctx) return;
+    let n=0;
+    while(next<ctx.currentTime+.45 && n<32){ emit(next,step); next+=SP; step++; n++; }
+  }
+  function build(){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return false;
+    try{ ctx=new AC(); }catch(e){ return false; }
+    master=ctx.createGain(); master.gain.value=0;
+    bus=ctx.createBiquadFilter(); bus.type='lowpass'; bus.frequency.value=2300; bus.Q.value=.35;
+    bus.connect(master); master.connect(ctx.destination);
+    return true;
+  }
+  function fade(to,sec){
+    if(!ctx) return;
+    const g=master.gain, t=ctx.currentTime;
+    g.cancelScheduledValues(t); g.setValueAtTime(g.value,t); g.linearRampToValueAtTime(to,t+sec);
+  }
+  return {
+    on(){
+      want=true;
+      if(!ctx && !build()){ want=false; return false; }
+      if(ctx.state==='suspended' && ctx.resume) ctx.resume();
+      if(!timer){ next=ctx.currentTime+.1; timer=setInterval(pump,140); pump(); }
+      fade(VOL,1.4); store.set('typing-siege-bgm','1'); return true;
+    },
+    off(){
+      want=false; fade(0,.5); store.set('typing-siege-bgm','0');
+      setTimeout(()=>{ if(!want && timer){ clearInterval(timer); timer=0; } },700);
+    },
+    duck(q){ if(want) fade(q?VOL*.3:VOL,.4); },       // 멈춤 중에는 작게
+    wanted(){ return want; }
+  };
+})();
+function bgmLabel(){
+  // 첫 조작 전이라 아직 안 울렸어도, 켤 예정이면 켜진 것으로 보여 준다
+  const on=BGM.wanted()||store.get('typing-siege-bgm')!=='0', t=on?'배경음 켜짐':'배경음 꺼짐';
+  const a=$('bgmBtn'), b=$('bgmBtn2');
+  if(a) a.textContent=t; if(b) b.textContent=on?'배경음':'음소거';
+}
+function bgmToggle(){ BGM.wanted()?BGM.off():BGM.on(); bgmLabel(); }
+$('bgmBtn').addEventListener('click',bgmToggle);
+$('bgmBtn2').addEventListener('click',()=>{ bgmToggle(); typer.focus(); });
+// 브라우저 정책상 첫 조작 뒤에야 소리를 낼 수 있다
+(function(){
+  if(store.get('typing-siege-bgm')==='0'){ bgmLabel(); return; }
+  const go=()=>{ BGM.on(); bgmLabel(); document.removeEventListener('pointerdown',go); document.removeEventListener('keydown',go); };
+  document.addEventListener('pointerdown',go); document.addEventListener('keydown',go);
+  bgmLabel();
+})();
 
 // ---------- 화면 밝기 ----------
 const themeBtn=$('themeBtn');
