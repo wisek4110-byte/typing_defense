@@ -411,7 +411,7 @@ kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-b
       <li><b style="color:var(--frost)">파란 단어</b>모든 적 3초 빙결</li>
       <li><b style="color:var(--moss)">초록 단어</b>성 체력 회복</li>
       <li><b style="color:var(--violet)">보라 단어</b>앞 글자 2개 깎기</li>
-      <li><b>글자 아래 네모</b>남은 칸만큼 더 쳐야 함</li>
+      <li><b>글자 아래 네모</b>갑옷. 한 번에 다 부술 수 없어 두 번 이상 쳐야 함</li>
       <li><b style="color:var(--torch)">주황 게이지</b>멀리서 성을 쏠 준비 중</li>
     </ul>
     <p class="gh">키</p>
@@ -539,11 +539,12 @@ const STAGES = [
   {name:'왕성',       from:15, hp:280, slots:6},
 ];
 const TOWERS = {
-  archer:{name:'궁수탑', desc:'적의 글자를 떨어뜨림. 곧 쏘려는 원거리 적을 먼저 노림', cost:[30,45,75], art:[' _^_ ',' |>| ','_|_|_'], val:[4,3,2.2]},
-  frost: {name:'서리탑', desc:'성 앞 구역의 적을 느리게 만듦',     cost:[40,60,90], art:[' \\*/ ',' -*- ',' /*\\ '], val:[.25,.35,.45]},
-  mine:  {name:'금광',   desc:'8초마다 골드 생산',                 cost:[35,50,80], art:[' $$$ ','[###]','/   \\'], val:[3,5,8]},
-  wall:  {name:'방벽',   desc:'성 대신 피해를 받아 주는 보호막',   cost:[30,45,70], art:['|=|=|','|=|=|','|_|_|'], val:[20,40,70]},
+  archer:{name:'궁수탑', desc:'적의 글자를 떨어뜨림. 곧 쏘려는 원거리 적을 먼저 노림', cost:[30,45,70,105,150], art:[' _^_ ',' |>| ','_|_|_'], val:[5.5,4.6,3.9,3.3,2.8]},
+  frost: {name:'서리탑', desc:'성 앞 구역의 적을 느리게 만듦',     cost:[40,60,90,130,180], art:[' \\*/ ',' -*- ',' /*\\ '], val:[.12,.17,.22,.27,.32]},
+  mine:  {name:'금광',   desc:'8초마다 골드 생산',                 cost:[35,55,85,125,175], art:[' $$$ ','[###]','/   \\'], val:[2,3,4,5,6]},
+  wall:  {name:'방벽',   desc:'성 대신 피해를 받아 주는 보호막',   cost:[30,50,80,120,170], art:['|=|=|','|=|=|','|_|_|'], val:[12,20,29,38,48]},
 };
+const MAX_TIER = 5;
 const EMPTY_ART = ['     ',' [+] ','     '];
 
 // ---------- words ----------
@@ -656,7 +657,9 @@ const MAX_LEVEL=120;
 function targetKPM(L){ L=Math.min(L,MAX_LEVEL); if(L<=10) return 50+10*L; if(L<=20) return 150+15*(L-10); return 300+(L-20)*4; }
 // 적이 전장을 가로지르는 시간(초). 천천히 줄어듦
 function crossTime(L){ if(L<=21) return Math.max(11, 22-(L-1)*0.55); return Math.max(8, 11-(L-21)*0.0303); } // Lv120 = 8초
-function xpNeed(L){ return 30+15*L; }
+function xpNeed(L){ return 30+16*L; }
+// 레벨이 오를수록 같은 타수로 얻는 경험치가 줄어든다 (Lv1 ×1.00 → Lv20 ×0.78 → Lv50 ×0.58 → Lv100↑ ×0.40)
+function xpGainMul(L){ return Math.max(.40, 1/(1+.015*(Math.min(L,MAX_LEVEL)-1))); }
 function stageFor(L){ let s=0; STAGES.forEach((st,i)=>{ if(L>=st.from) s=i; }); return s; }
 function tierWeights(L){
   if(L<=2) return {2:.55,3:.45};
@@ -982,12 +985,14 @@ function hit(e,t){
   S.combo++; S.maxCombo=Math.max(S.maxCombo,S.combo);
   let dmg=S.damage*(S.time<S.rageUntil?2:1);
   const crit=Math.random()<S.crit; if(crit) dmg*=2;
+  // 갑옷 적은 한 번에 무너지지 않는다 — 공격력이 높아도 마지막 갑옷 한 칸은 다시 쳐야 한다
+  if(e.maxHp>1) dmg=Math.min(dmg, e.maxHp-1);
   addXp(keysOf(e.full));
   e.hp-=dmg;
   if(crit) floatText(e.px,e.py-6,'치명타!','var(--ember)');
   if(S.combo>0 && S.combo%10===0) floatText(e.px,e.py-22,`${S.combo} 콤보`,'var(--torch)');
   if(e.hp<=0) kill(e,{typed:true,crit});
-  else { floatText(e.px+e.w/2,e.py,`-${dmg}`,'var(--ember)'); e.full=e.rest=pickWord(unitTier(e.kind)); e.chipped=''; renderEnemy(e,true); }
+  else { floatText(e.px+e.w/2,e.py,`갑옷 -${dmg} (${e.hp} 남음)`,'var(--ember)'); e.full=e.rest=pickWord(unitTier(e.kind)); e.chipped=''; renderEnemy(e,true); }
 }
 function comboMul(){ return 1+Math.min(S.combo,50)*(S.comboKeep?.04:.02); }
 function kill(e,{typed=false,crit=false,tower=false}={}){
@@ -1081,7 +1086,7 @@ function refreshLocks(){ if(S) S.enemies.forEach(e=>renderEnemy(e)); }
 // ---------- xp / level ----------
 function addXp(n){
   if(S.level>=MAX_LEVEL){ S.xp=Math.min(S.xp+n,xpNeed(S.level)); return; }
-  S.xp+=n;
+  S.xp+=n*xpGainMul(S.level);
   if(S.xp>=xpNeed(S.level) && !S.pendingLevel) levelUp();
 }
 function levelUp(){
@@ -1133,7 +1138,7 @@ function applyStage(grow){
 
 // ---------- perks ----------
 const PERKS=[
-  {id:'dmg',  n:'날 선 손끝',   d:'공격력 +1. 갑옷 적과 보스를 더 빨리 부순다.', max:3, f:()=>S.damage++},
+  {id:'dmg',  n:'날 선 손끝',   d:'공격력 +1. 갑옷이 두꺼운 탱크와 보스를 더 빨리 부순다.', max:3, f:()=>S.damage++},
   {id:'crit', n:'급소 찌르기', d:'치명타 확률 +12%. 치명타는 피해와 골드가 2배.', max:4, f:()=>S.crit+=.12},
   {id:'gold', n:'연금술',       d:'얻는 골드 +25%.', max:5, f:()=>S.goldMul+=.25},
   {id:'hp',   n:'석공 길드',   d:'성 최대 체력 +25, 체력을 모두 회복.', max:6, f:()=>{S.bonusHp+=25; S.maxHp+=25; S.hp=S.maxHp;}},
@@ -1178,7 +1183,7 @@ function renderSlots(){
     b.className='slot'+(locked?' locked':'')+(t.type?' t-'+t.type:'');
     const artL = t.type?TOWERS[t.type].art:EMPTY_ART;
     const nextSt = STAGES.find(s=>s.slots>i);
-    b.innerHTML=`<pre>${artL.join('\n')}</pre><span class="sn">${locked?`Lv ${nextSt?nextSt.from:'-'}에 열림`: t.type?`${TOWERS[t.type].name} ${'★'.repeat(t.lvl)}`:'빈 자리'}</span>${t.type==='archer'||t.type==='mine'?'<span class="cdbar"><i></i></span>':''}`;
+    b.innerHTML=`<pre>${artL.join('\n')}</pre><span class="sn">${locked?`Lv ${nextSt?nextSt.from:'-'}에 열림`: t.type?`${TOWERS[t.type].name} ★${t.lvl}`:'빈 자리'}</span>${t.type==='archer'||t.type==='mine'?'<span class="cdbar"><i></i></span>':''}`;
     b.disabled=false;
     b.addEventListener('click',ev=>{ ev.stopPropagation(); if(!locked) openMenu(i,b); });
     t.el=b;
@@ -1194,8 +1199,8 @@ function openMenu(i,anchor){
     for(const k in TOWERS){ const T=TOWERS[k]; html+=`<button data-act="build" data-k="${k}" ${S.gold<T.cost[0]?'disabled':''}><pre>${T.art.join('\n')}</pre><span class="mn">${T.name}<span class="md">${T.desc}</span></span><span class="mc">${T.cost[0]}G</span></button>`; }
   } else {
     const T=TOWERS[t.type];
-    html+=`<h4>${T.name} ${'★'.repeat(t.lvl)}</h4>`;
-    if(t.lvl<3){ const c=T.cost[t.lvl]; html+=`<button data-act="up" ${S.gold<c?'disabled':''}><pre>${T.art.join('\n')}</pre><span class="mn">강화 ★${t.lvl+1}<span class="md">${describe(t.type,t.lvl+1)}</span></span><span class="mc">${c}G</span></button>`; }
+    html+=`<h4>${T.name} ${'★'.repeat(t.lvl)}${'☆'.repeat(MAX_TIER-t.lvl)}</h4>`;
+    if(t.lvl<MAX_TIER){ const c=T.cost[t.lvl]; html+=`<button data-act="up" ${S.gold<c?'disabled':''}><pre>${T.art.join('\n')}</pre><span class="mn">강화 ★${t.lvl+1}<span class="md">${describe(t.type,t.lvl)} → ${describe(t.type,t.lvl+1)}</span></span><span class="mc">${c}G</span></button>`; }
     else html+=`<h4>최대 강화</h4>`;
     const refund=Math.floor(T.cost.slice(0,t.lvl).reduce((a,b)=>a+b,0)*.5);
     html+=`<button data-act="sell"><pre>  x  </pre><span class="mn">철거<span class="md">지은 값의 절반을 돌려받음</span></span><span class="mc">+${refund}G</span></button>`;
@@ -1225,7 +1230,7 @@ document.addEventListener('click',()=>closeMenu());
 let frostSlow=0;
 function updateDerived(){
   const fr=S.towers.filter((t,i)=>t.type==='frost'&&i<STAGES[S.stage].slots).map(t=>TOWERS.frost.val[t.lvl-1]).sort((a,b)=>b-a);
-  frostSlow = fr.length? Math.min(.6, fr[0]+(fr.length-1)*.05) : 0;
+  frostSlow = fr.length? Math.min(.45, fr[0]+(fr.length-1)*.04) : 0;
   $('frostzone').classList.toggle('on',frostSlow>0);
   S.maxShield=S.towers.filter((t,i)=>t.type==='wall'&&i<STAGES[S.stage].slots).reduce((a,t)=>a+TOWERS.wall.val[t.lvl-1],0);
   S.shield=Math.min(S.shield,S.maxShield);
@@ -1271,7 +1276,7 @@ function updateTowers(dt){
       const bar=t.el.querySelector('.cdbar i'); if(bar) bar.style.width=(t.cd/iv*100)+'%';
     }
   });
-  if(S.maxShield>0 && S.time-S.lastHit>4) S.shield=Math.min(S.maxShield,S.shield+S.maxShield*.03*dt);
+  if(S.maxShield>0 && S.time-S.lastHit>6) S.shield=Math.min(S.maxShield,S.shield+S.maxShield*.015*dt);
 }
 
 // ---------- loop ----------
@@ -1376,7 +1381,8 @@ function setPause(p){
 }
 function pauseStats(){
   $('pauseStats').innerHTML=[['레벨',`Lv ${S.level}`],['성',STAGES[S.stage].name],
-    ['골드',`${S.gold}G`],['내 타수',`${kpmNow()}타`]].map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
+    ['골드',`${S.gold}G`],['내 타수',`${kpmNow()}타`],
+    ['경험치 획득',`×${xpGainMul(S.level).toFixed(2)}`],['다음 레벨까지',`${Math.max(0,Math.ceil(xpNeed(S.level)-S.xp))}`]].map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
 }
 function recordBest(){
   const best=+(store.get('typing-siege-best')||0);
